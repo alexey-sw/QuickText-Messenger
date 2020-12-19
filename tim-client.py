@@ -3,6 +3,12 @@ import threading
 import time
 
 
+#! commands available:
+#? -info : information about the project
+#? -s: send a message
+#? -shtdwn: terminate server and end session
+
+
 class Client:
     def __init__(self):
 
@@ -20,17 +26,20 @@ class Client:
         FORMAT = self.FORMAT
         message = msg.encode(FORMAT)
         msg_length = len(message)
-        send_length = str(msg_length).encode(FORMAT)
-        send_length += b' '*(self.HEADERSIZE - len(send_length))
-        self.sock.send(send_length)
+        msg_length = str(msg_length).encode(FORMAT)
+        msg_length += b' '*(self.HEADERSIZE - len(msg_length))
+        self.sock.send(msg_length)
         self.sock.send(message)
         response = self.sock.recv(2048)
         print(response)
-# objective: send commands to server in json format
+
+#TODO: implement info command
 
 
 client = Client()
 client.start()
 client.send("-s: Hello world")
+client.send("-info:")
+client.send("-hello:")
 time.sleep(2)
-client.send("-ex:")
+client.send("-shtdwn:")

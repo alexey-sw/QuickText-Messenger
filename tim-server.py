@@ -23,19 +23,19 @@ class Server:
         self.ADDR = (self.IP, self.PORT)
         self.FORMAT = "utf-8"
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+        self.usercmds = {
+            "-s:":"SEND_MESSAGE",
+            "-shtdwn:":self.exec_exit, #* these are functions that handle commands of clients, used in handle_client
+            "-info:":"SHOW_INFO"
+        }
+        
     def exec_exit(self):
         print("Shutting the server down")
         os._exit(0)
 
     def parse_cmd(self, msg):
         cmd = msg[0:3]
-        if cmd == "-ex":
-            print("EXIT command received")
-            return "EXIT"
-        else:
-            print("unknown command received")
-            return None
+        return cmd
 
     def handle_client(self, conn, addr):
         print(f"[New connection] {addr} connected")
@@ -47,13 +47,20 @@ class Server:
                 msg_length = int(msg_length)
                 msg = conn.recv(msg_length).decode(self.FORMAT)
                 cmd = self.parse_cmd(msg)
-                if cmd == "EXIT":
-                    connected = False
-                    to_exit = True
-
-                print(f"[{addr}] {msg}")
-                conn.send(b"Msg received")
-
+                print(cmd)
+                if cmd in self.usercmds.keys():
+                    if self.usercmds[cmd]=="SEND_MESSAGE":
+                        print("SEND_MESSAGE command")
+                        print(f"[{addr}] has sent message: {msg}")
+                        conn.send(b"Msg received")
+                    elif self.usercmds[cmd] =="SHOW_INFO":
+                        print("SHOW_INFO command")
+                        conn.send(b"here is your info")
+                    else:
+                        conn.send(b"shutdown successful")
+                        to_exit==True
+                else:
+                    print(f"Invalid command has been received {cmd}")
         conn.close()
         if to_exit:
             self.exec_exit()
