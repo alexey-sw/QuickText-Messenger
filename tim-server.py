@@ -6,7 +6,6 @@ import os
 
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
-print(socket.gethostname())
 TERMINATED = False
 ADDR = (SERVER,PORT)
 HEADER = 64 # each message contains this number of bytes coming before the message
@@ -14,7 +13,6 @@ HEADER = 64 # each message contains this number of bytes coming before the messa
 FORMAT = "utf-8"
 server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 server.bind(ADDR)
-DISCONNECT_MESSAGE = "!Disconnect"
 
 def exec_exit():
     print("Shutting the server down")
