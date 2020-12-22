@@ -3,18 +3,13 @@ import threading
 import time
 import sys
 import os
-
-# PORT = 5050
-# SERVER = socket.gethostbyname(socket.gethostname())
-# TERMINATED = False
-# ADDR = (SERVER,PORT)
-# HEADERSIZE = 64 # each message contains this number of bytes coming before the message
-# # this info contains number bytesize of the main message
-# FORMAT = "utf-8"
-# server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-# server.bind(ADDR)
-
-
+import codecs
+import json
+#TODO : fix cmd interpretation, move all cmd interpretation code to the client script 
+#TODO : write function for each command 
+#TODO : feature that allows user to send message to a specific user 
+#TODO : RUSSIFICATION
+#! server doesn't parse commands, they come clearly defined  with the message
 class Server:
     def __init__(self):
         self.HEADERSIZE = 64
@@ -26,17 +21,27 @@ class Server:
         self.usercmds = {
             "-s:":"SEND_MESSAGE",
             "-shtdwn:":self.exec_exit, #* these are functions that handle commands of clients, used in handle_client
-            "-info:":"SHOW_INFO"
+            "-info:":self.sendInfo
+            
         }
         
-    def exec_exit(self):
+    def exec_exit(self,*args):
         print("Shutting the server down")
         os._exit(0)
-
+        
+    def sendInfo(self,conn):
+        filepath = "info.txt"
+        with codecs.open(filepath,"r","Windows 1251") as file:
+            info = file.read()
+            info = info.encode("Windows 1251")
+        conn.send(info)
+        print(f"info was sent to {conn}")
+        
     def parse_cmd(self, msg):
-        cmd = msg[0:3]
-        return cmd
-
+        message_dict = json.loads(msg)
+        print(message_dict)
+        return message_dict["cmd"]
+    
     def handle_client(self, conn, addr):
         print(f"[New connection] {addr} connected")
         to_exit = False
@@ -46,24 +51,16 @@ class Server:
             if msg_length:
                 msg_length = int(msg_length)
                 msg = conn.recv(msg_length).decode(self.FORMAT)
+                #! there must be a method decoding message
                 cmd = self.parse_cmd(msg)
-                print(cmd)
-                if cmd in self.usercmds.keys():
-                    if self.usercmds[cmd]=="SEND_MESSAGE":
-                        print("SEND_MESSAGE command")
-                        print(f"[{addr}] has sent message: {msg}")
-                        conn.send(b"Msg received")
-                    elif self.usercmds[cmd] =="SHOW_INFO":
-                        print("SHOW_INFO command")
-                        conn.send(b"here is your info")
-                    else:
-                        conn.send(b"shutdown successful")
-                        to_exit==True
+                
+                if self.usercmds[cmd]=="SEND_MESSAGE":
+                    print("SEND_MESSAGE command")
+                    print(f"[{addr}] has sent message: {msg}")
+                    conn.send(b"Msg received")
                 else:
-                    print(f"Invalid command has been received {cmd}")
-        conn.close()
-        if to_exit:
-            self.exec_exit()
+                    self.usercmds[cmd](conn)
+    
 
     def start(self):  # handles all connection and passes each connection for handle_client
         self.sock.bind(self.ADDR)
