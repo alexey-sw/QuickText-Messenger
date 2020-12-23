@@ -15,7 +15,7 @@ class Client:
         self.SERVERPORT = 5050
         self.FORMAT = "utf-8"
         self.HEADERSIZE = 64
-        self.SERVERIP = "169.254.57.70"
+        self.SERVERIP = "192.168.1.191"
         print(self.SERVERIP)
         self.SERVERADDR = (self.SERVERIP, self.SERVERPORT)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

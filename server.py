@@ -10,11 +10,21 @@ import json
 #TODO : feature that allows user to send message to a specific user 
 #TODO : RUSSIFICATION
 #! server doesn't parse commands, they come clearly defined  with the message
+alph = "ABCDEFG"
+
+
+class Sender:# class is responsible for sending messages to other users
+    def __init__(self):
+        self.connections = []
+        
+    
+
+
 class Server:
     def __init__(self):
         self.HEADERSIZE = 64
         self.PORT = 5050
-        self.IP = socket.gethostbyname(socket.gethostname())
+        self.IP = "192.168.1.191" # changed for local for the time being 
         self.ADDR = (self.IP, self.PORT)
         self.FORMAT = "utf-8"
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -24,7 +34,7 @@ class Server:
             "-info:":self.sendInfo
             
         }
-        
+        self.connections = []
     def exec_exit(self,*args):
         print("Shutting the server down")
         os._exit(0)
@@ -42,8 +52,18 @@ class Server:
         print(message_dict)
         return message_dict["cmd"]
     
+    def unwrap_message(self,msg):
+        message_dict = json.loads(msg)
+        return message_dict
+    
+    def add_to_connections(self,connection):
+        thread_id = threading.active_count()-1
+        print(f"this is user number:{thread_id}")
+        self.connections.append([alph[thread_id],connection])
+    
     def handle_client(self, conn, addr):
         print(f"[New connection] {addr} connected")
+        self.add_to_connections(conn)
         to_exit = False
         connected = True
         while connected:
@@ -52,7 +72,9 @@ class Server:
                 msg_length = int(msg_length)
                 msg = conn.recv(msg_length).decode(self.FORMAT)
                 #! there must be a method decoding message
-                cmd = self.parse_cmd(msg)
+                unwrpt_message = self.unwrap_message(msg)
+                cmd = unwrpt_message["cmd"]
+                
                 
                 if self.usercmds[cmd]=="SEND_MESSAGE":
                     print("SEND_MESSAGE command")
