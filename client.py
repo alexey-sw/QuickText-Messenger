@@ -15,7 +15,7 @@ class Client:
         self.SERVERPORT = 5050
         self.FORMAT = "utf-8"
         self.HEADERSIZE = 64
-        self.SERVERIP = socket.gethostbyname(socket.gethostname())
+        self.SERVERIP = "169.254.57.70"
         print(self.SERVERIP)
         self.SERVERADDR = (self.SERVERIP, self.SERVERPORT)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -67,15 +67,17 @@ class Client:
         msg = msg[cmdlen:]
         return msg
     def receiveResponse(self):
+        response = ""
+
         def exit_thread():
+            nonlocal response
             if response:
                 response = response.decode(encoding = "Windows 1251")
-                print(f"Response from server {response}")
+                print(f"Response from server: {response}\n\n")
             else:
                 print("Unknown error,no response from server has been obtained, exiting thread")
-        response_timer = threading.Timer(5.0,exit_thread)
+        response_timer = threading.Timer(2.0,exit_thread)
         response_timer.start()
-        response = ""
         response = self.sock.recv(1024)
         
     def send(self, msg):  # variables in argument may change
