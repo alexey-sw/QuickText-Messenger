@@ -1,0 +1,23 @@
+class Cli:  - responsible for parsing commands and displaying of messages and other data (such as chat history)
+
+
+
+
+    -start():starts new thread with constant input prompt
+    -parse_command(): parses command
+    -show(): shows messages and other information
+    -colorize(): yet undefined
+    -chat_history: provides chat history for the user
+    -register() : sign-in or sign-up process
+
+class Client:
+    -nextmessage: everything about next message
+    -start(): calls Cli.start(), establishes connection with our server, starts another thread that receives data
+    from server (messages, message status)
+    -send(): 
+    -compose_message(): composes message into json string
+    -send(): sends json string message
+
+
+
+
