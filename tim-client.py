@@ -55,7 +55,9 @@ class Client:
             "to":"Vasya",
             "time":time.time(),
             "text":msg,
-            "cmd":command
+            "cmd":command,
+            "message":True,
+            "delay":0
         }
         json_composed_message = json.dumps(composed_message)
         return json_composed_message        
@@ -64,7 +66,18 @@ class Client:
         cmdlen = len(cmd)
         msg = msg[cmdlen:]
         return msg
-
+    def receiveResponse(self):
+        def exit_thread():
+            if response:
+                response = response.decode(encoding = "Windows 1251")
+                print(f"Response from server {response}")
+            else:
+                print("Unknown error,no response from server has been obtained, exiting thread")
+        response_timer = threading.Timer(5.0,exit_thread)
+        response_timer.start()
+        response = ""
+        response = self.sock.recv(1024)
+        
     def send(self, msg):  # variables in argument may change
         FORMAT = self.FORMAT
         command = self.parseCommand(msg)
@@ -79,15 +92,16 @@ class Client:
             msg_length += b' '*(self.HEADERSIZE - len(msg_length))
             self.sock.send(msg_length)
             self.sock.send(message)
-            response = self.sock.recv(1024)
-            print(response.decode(encoding="Windows 1251"))
+            thread = threading.Thread(
+                target=self.receiveResponse)
+            thread.start()
+            
+            #TODO : receive response with a new thread
+            
         else:
             pass # command was incorrect
-        
-        #! there was a problem with sending all messages due to the fact that client was awaiting server response
-        #! need to work on it with threading
-
 
 client = Client()
-client.start()
-client.send("-info:wtf")
+client.start() # testing multithreaded response audition
+client.send("-s:Hello")
+client.send("-info:wtf") 

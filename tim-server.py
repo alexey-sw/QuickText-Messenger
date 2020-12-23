@@ -57,7 +57,6 @@ class Server:
                 if self.usercmds[cmd]=="SEND_MESSAGE":
                     print("SEND_MESSAGE command")
                     print(f"[{addr}] has sent message: {msg}")
-                    conn.send(b"Msg received")
                 else:
                     self.usercmds[cmd](conn)
     
