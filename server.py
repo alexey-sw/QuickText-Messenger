@@ -10,13 +10,11 @@ import json
 # TODO : feature that allows user to send message to a specific user
 #TODO : RUSSIFICATION
 #! server doesn't parse commands, they come clearly defined  with the message
-alph = "ABCDEFG"
-
 
 class Sender:  # class is responsible for sending messages to other users
     def __init__(self):
         self.encoding = "Windows 1251"
-        self.len_byte_size = 64
+        self.max_header_size = 64
 
     def send_message(self, conn, msg):  # args : connection, user
         message_len = str(len(msg))
@@ -24,15 +22,14 @@ class Sender:  # class is responsible for sending messages to other users
         message_len_encoded = self.encode(msg)
         message_encoded = self.encode(msg)
         conn.send(message_len_encoded)
-        conn.send(message_len_encoded)
-        pass
+        conn.send(message_encoded)
 
     def encode(self, msg):
         msg = msg.encode(self.encoding)
         return msg
 
     def to_byte_size(self, msg):
-        msg = msg+" "*(self.len_byte_size-len(msg))
+        msg = msg+" "*(self.max_header_size-len(msg))
         print(len(msg))
         return msg
 
@@ -42,6 +39,33 @@ class Sender:  # class is responsible for sending messages to other users
 
     def notify_client_delivery(self):
         pass
+
+
+class Parser:  # performs various operations on our messages
+    def __init__(self):
+        self.encoding = "Windows 1251"
+        pass
+
+    def encode(self, message):
+        return message.encode(self.encoding)
+
+    def decode(self, message):
+        return message.decode(self.encoding)
+
+    def json_to_obj(self, jsn):
+        obj = json.loads(jsn)
+        return obj
+
+    def format_message_length(self, msg_len):
+        msg_len = msg_len.decode(self.encoding)
+        msg_len = msg_len.strip()
+        msg_len = int(msg_len)
+        return msg_len
+
+    def decode_unwrap_message(self, msg):
+        msg = self.decode(msg)
+        msg = self.json_to_obj(msg)
+        return msg
 
 
 class Server:
@@ -55,15 +79,12 @@ class Server:
         self.usercmds = {
             "-s:": "SEND_MESSAGE",
             # * these are functions that handle commands of clients, used in handle_client
-            "-shtdwn:": self.exec_exit,
-            "-info:": self.sendInfo
-
+            "-info:": self.sendInfo,
+            "-disconnect:": self.disconnect_user,
         }
-        self.connections = []
-
-    def exec_exit(self, *args):
-        print("Shutting the server down")
-        os._exit(0)
+        # matrix, each element of array contains 3 vals
+        self.connections = [["a"], ["b"], ["c"], ["d"], ["e"], ["f"]]
+        # accountname, connection info #! if len of element == 1 -> account is free for use
 
     def sendInfo(self, conn):
         filepath = "info.txt"
@@ -73,39 +94,37 @@ class Server:
         conn.send(info)
         print(f"info was sent to {conn}")
 
-    def parse_cmd(self, msg):
-        message_dict = json.loads(msg)
-        print(message_dict)
-        return message_dict["cmd"]
+    def disconnect_user(self, user):
+        for i in range(len(self.connections)):
+            if self.connections[i][0] == user:
+                self.connections[i] = user
 
-    def unwrap_message(self, msg):
-        message_dict = json.loads(msg)
-        return message_dict
+    def check_if_connected(self, indx):
+        if len(self.connections[indx]) == 1:
+            return False
+        return True
 
-    def add_to_connections(self, connection):
-        thread_id = threading.active_count()-1
-        print(f"this is user number:{thread_id}")
-        self.connections.append([alph[thread_id], connection])
+    def add_to_connections(self, connection):  # returns index of our user in array
+        for i in range(len(self.connections)):
+            # if no user is not connected under this account
+            if len(self.connections[i]) == 1:
+                self.connections[i].append(connection)
+                return i  # returns index of our user in array
 
     def handle_client(self, conn, addr):
         print(f"[New connection] {addr} connected")
-        self.add_to_connections(conn)
-        to_exit = False
+        client_index = self.add_to_connections(conn)
         connected = True
-        while connected:
-            msg_length = conn.recv(self.HEADERSIZE).decode(self.encoding)
-            if msg_length:
-                msg_length = int(msg_length)
-                msg = conn.recv(msg_length).decode(self.encoding)
-                #! there must be a method decoding message
-                unwrpt_message = self.unwrap_message(msg)
-                cmd = unwrpt_message["cmd"]
+        while self.check_if_connected(client_index):
+            print(
+                f"New connection {addr} has logged in as {self.connections[client_index][0]}")
+            msg_length = conn.recv(self.HEADERSIZE)
+            msg_length = parser.format_message_length(msg_length)
+            message = conn.recv(msg_length)
 
-                if self.usercmds[cmd] == "SEND_MESSAGE":
-                    print("SEND_MESSAGE command")
-                    print(f"[{addr}] has sent message: {msg}")
-                else:
-                    self.usercmds[cmd](conn)
+            #! there must be a method decoding message
+            unwrpt_message = parser.decode_unwrap_message()
+            command = unwrpt_message["command"]
 
     def start(self):  # handles all connection and passes each connection for handle_client
         self.sock.bind(self.ADDR)
@@ -119,6 +138,14 @@ class Server:
             print(f"[ACTIVE CONNECTIONS] {threading.active_count()-1}")
 
 
+parser = Parser()
 server = Server()
 print("Starting server")
 server.start()
+
+
+# code that is not needed as for now:
+
+def exec_exit(self, *args):
+    print("Shutting the server down")
+    os._exit(0)

@@ -3,13 +3,13 @@ import threading
 import time
 import json
 
-class Parser:  # parses and composes message
+class Parser:  # parses and composes message, performs operations on messages 
     def __init__(self):
         self.user_commands = ["-s:", "-delay:", "-switch:",
-                              "-disconnect:", "-delayall:"]  # for server
+                              "-disconnect:", "-delayall:"]  # for server, forgot about -info
         self.encoding = "Windows 1251"
         self.setup_commands = ["-delay:", "-switch:", "-delayall:"]
-
+        self.max_header_len = 64 # max size of message_len in bytes 
     def parse_input(self, user_input):  # * wraps necessary properties of input in an object
         command = self.parse_cmd(user_input)
         text = self.cropMsg(user_input, command)
@@ -71,7 +71,19 @@ class Parser:  # parses and composes message
     def object_to_json(self, obj):
         json_string = json.dumps(obj)
         return json_string
-
+    def add_to_maxlen(self,msg_len):
+        msg_len = msg_len+" "*(self-len(msg_len))
+    def format_message_length(self,msg_len,for_server = True): # msg - int
+        if for_server: # encoding our message_len
+            msg_len = str(msg_len)
+            msg_len = msg_len+" "*(self.max_header_len-len(msg_len))
+            msg_len = self.encode(msg_len)
+            return msg_len
+        else: # decoding our message_len 
+            msg_len = self.decode(msg_len)
+            msg_len = int(msg_len.strip())
+            return msg_len
+            
 class Cli:
     def __init__(self, client):
         self.client = client
@@ -86,7 +98,7 @@ class Cli:
         print(welc_message)
         while True:
             user_input = input()
-            parsed_input = Parser.parse_input(user_input)
+            parsed_input = parser.parse_input(user_input)
             if parsed_input and parsed_input["command"] :# check that text not an empty string
                 # updating recipient,delay of our message and so on
                 self.client.update_message_state(parsed_input)
@@ -112,7 +124,7 @@ class Client:
             # flag that indicates whether message should be resent or audited by server
             "is_message": True
         }
-        self.test_mode = True
+        self.test_mode = False # don't permit access to the Internet 
         self.reset_delay = True
         # commands that are not sent to server
         self.setup_commands = ["-delay:", "-switch:", "-delayall:"]
@@ -133,13 +145,13 @@ class Client:
         while True:
             message_len = socket.recv(64)
             message = socket.recv(message_len)
-            decoded_message = Parser.decode(message)
+            decoded_message = parser.decode(message)
             print("Message from server: ", decoded_message, "\n\n")
 
-    def response_from_server(self):
+    def response_from_server(self): # one star near the message
         pass
     
-    def response_from_client(self):
+    def response_from_client(self): # two stars near the message 
         pass
     
     def change_property(self, name, value):
@@ -175,21 +187,20 @@ class Client:
         self.update(msg)  # updates message state
         print(self.message_state, " message obj")
         if self.to_send == True:  # if send flag is true
-            print(True)
             self.to_send = False
-
             raw_message = self.message_state
-            json_message = Parser.object_to_json(raw_message)
-            encoded_message = Parser.encode(json_message)
+            json_message = parser.object_to_json(raw_message)
+            formatted_msg_len = parser.format_message_length(len(json_message))
+            encoded_message = parser.encode(json_message)
             if self.reset_delay == True:
-                print("here")
                 self.change_property("delay", 0)
             self.send(encoded_message, self.sock)
             # reset delay
 
     def send(self, msg, socket):
-        print(msg, " message_string")
+        print(msg)
+        
     
-Parser = Parser()
+parser = Parser()
 client = Client()
 client.start()
