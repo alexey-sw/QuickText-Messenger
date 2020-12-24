@@ -24,13 +24,12 @@ class Parser:  # parses and composes message
             try:
                 text = int(text)
             except:
-                print(f"Invalid argument for {command} function: {text})
+                print(f"Invalid argument for {command} function: {text}")
                 return False
             else:
                 return True
         else:
             return True # if it is not delay command automatically return true 
-            
             
     def encode(self, msg):
         msg = msg.encode(self.encoding)
@@ -129,7 +128,7 @@ class Client:
             data_thread.start()
 
     # data from server is passed in 2 parts : message_length and message itself
-    def receive_data(self, socket):
+    def receive_data(self, socket): # there will be 3 types of messages: user messages, error messages and delivered messages
         #! client doesn't differentiate server messages from user messages
         while True:
             message_len = socket.recv(64)
@@ -137,6 +136,12 @@ class Client:
             decoded_message = Parser.decode(message)
             print("Message from server: ", decoded_message, "\n\n")
 
+    def response_from_server(self):
+        pass
+    
+    def response_from_client(self):
+        pass
+    
     def change_property(self, name, value):
         self.message_state[name] = value
 
