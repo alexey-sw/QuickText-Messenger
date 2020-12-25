@@ -199,7 +199,7 @@ class Client:
         elif update["command"] == "-delay:":
             # we don't delay disconnect messages
             self.reset_delay = True
-            self.change_message_property("delay", update["text"])
+            self.change_message_property("delay", int(update["text"]))
 
         elif update["command"] == "-switch:":
             self.change_message_property("to", update["text"])

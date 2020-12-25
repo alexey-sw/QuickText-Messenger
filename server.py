@@ -17,27 +17,41 @@ class Sender:  # class is responsible for sending messages to other users
         self.encoding = "Windows 1251"
         self.max_header_size = 64
 
-    def send_message(self, msg):  # msg - message_object
+    def prepare_to_send_msg(self, msg):  # msg - message_object
         # we need to remove delay and to and not_notif_message properties from our message
         sender = msg["from"]
         recipient_account = msg["to"]
+        delay = msg["delay"]
         msg = parser.delete_message_properties(
             msg, "delay", "to", "not_notif_message", "command")
         msg_formatted = parser.encode_wrap_message(msg)
         # we don't use len(msg) cause it will output number of object properties
         message_len = len(msg_formatted)
         message_len_formatted = parser.format_message_length(message_len, True)
+        
+        if delay:
+            delay = float(delay)
+            send_timer = threading.Timer(delay,self.send,args = (message_len_formatted,msg_formatted,recipient_account))
+            send_timer.start()
+        else:
+            self.send(message_len_formatted,msg_formatted,recipient_account)
+        
+    def send(self,msg_len_formatted, msg_formatted, recipient_account):
         conn = self.get_conn(recipient_account)
         if conn:  # for beginning we will just ignore that message hasn't been sent to user if its
             # account doesn't exist
-            conn.send(message_len_formatted)
+            conn.send(msg_len_formatted)
             conn.send(msg_formatted)
 
     def get_conn(self, account_name):
         for elem in server.connections:
             if elem[0] == account_name:
-                print(elem[1])
-                return elem[1]
+                if len(elem) != 1:  # if connection was specified
+
+                    return elem[1]
+                print(f"No account named '{account_name}' has been found!")
+                return 0
+
         print(f"No account named '{account_name}' has been found!")
         return 0
 
@@ -109,10 +123,11 @@ class Server:
         self.encoding = "utf-8"
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # matrix, each element of array contains 3 vals
-        self.connections = [["a"], ["b"], ["c"], ["d"], ["e"], ["f"]]#! server identifies users using 
+        self.connections = [["a"], ["b"], ["c"], ["d"], [
+            "e"], ["f"]]  # ! server identifies users using
         #! different accounts but users don't identify themselves (they is "a" account)
         self.client_function_list = {  # functions that can be called after client request : -s: , -disconnect: and so on
-            "-s:": sender.send_message,
+            "-s:": sender.prepare_to_send_msg,
             "-disconnect:": self.disconnect_user,
             "-info": sender.send_info
         }
@@ -128,14 +143,14 @@ class Server:
 
     def disconnect_user(self, msg):
         user_to_disconnect = msg["from"]
-        
+
         for i in range(len(self.connections)):
             if self.connections[i][0] == user_to_disconnect:
                 print(f"'{user_to_disconnect}' has been disconnected")
                 self.connections[i] = [user_to_disconnect]
-                print(self.connections," - connections\n")
+                print(self.connections, " - connections\n")
                 break
-            
+
     def execute_client_command(self, message):  # message in object repr
         message_command = message["command"]
         if message_command == "-s:":  # we only need message_command, functions work with message_obj
@@ -144,7 +159,7 @@ class Server:
         elif message_command == "-info:":
             self.client_function_list[message_command](message)
 
-        elif message_command =="-disconnect:":
+        elif message_command == "-disconnect:":
             self.client_function_list[message_command](
                 message)  # -disconnect: command
 
