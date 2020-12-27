@@ -6,3 +6,7 @@
 we send a log-in request like -login:accouname
 if such accountname exists: we our from property in a message takes value of selected accountname'
 else: we need to try once more 
+
+
+
+Uniform message structure: 

@@ -18,7 +18,7 @@ class Parser:  # parses and composes message, performs operations on messages
         # forgot -last_online:  -help:
         self.max_header_len = 64  # max size of message_len in bytes
 
-    def parse_input(self, user_input):  # * wraps necessary properties of input in an object
+    def parse_input(self, user_input):
         command = self.parse_cmd(user_input)
         text = self.cropMsg(user_input, command)
         time = self.get_time()  # time of input

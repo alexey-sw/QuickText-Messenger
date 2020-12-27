@@ -23,10 +23,7 @@ class Sender:  # class is responsible for sending messages to other users
         sender = msg["from"]
         recipient_account = msg["to"]
         delay = msg["delay"]
-        msg = parser.delete_message_properties(
-            msg, "delay", "to", "not_notif_message", "command")
-        msg_formatted = parser.encode_wrap_message(msg)
-        # we don't use len(msg) cause it will output number of object properties
+        msg_formatted = parser.format_message(msg, to_client=True)
         message_len = len(msg_formatted)
         message_len_formatted = parser.format_message_length(message_len, True)
 
@@ -36,10 +33,11 @@ class Sender:  # class is responsible for sending messages to other users
                 message_len_formatted, msg_formatted, recipient_account))
             send_timer.start()
         else:
-            self.send(message_len_formatted, msg_formatted, recipient_account)
+            self.send(message_len_formatted, msg_formatted,
+                      recipient_account)
 
-    def send(self, msg_len_formatted, msg_formatted, recipient_account = None,connection = None):
-        if connection==None:
+    def send(self, msg_len_formatted, msg_formatted, recipient_account=None, connection=None):
+        if connection == None:
             connection = self.get_conn(recipient_account)
         if connection:  # for beginning we will just ignore that message hasn't been sent to user if its
             # azzccount doesn't exist
@@ -53,27 +51,27 @@ class Sender:  # class is responsible for sending messages to other users
             "time": server.get_time(),
             "from": "SERVER",
             "to": account_name,
-            "error": ""
+            "error": "",
+            "delay": 0
         }
-        message_formatted = parser.encode_wrap_message(message)
-        message_len = len(message_formatted)
-        message_len_formatted = parser.format_message_length(
-            message_len, to_user=True)
-        self.send(message_len_formatted, message_formatted, account_name)
 
-    def send_login_rejection(self, connection, error): # doesn't work because we don't have account value, if login is unsuccessfult
+        self.send_msg(message)
+
+    # doesn't work because we don't have account value, if login is unsuccessfult
+    def send_login_rejection(self, connection, error):
         message = {
             "command": "-login_reject:",
             "time": server.get_time(),
             "from": "SERVER",
-            "to": "unknown",
-            "error": error
-        }
-        message_formatted = parser.encode_wrap_message(message)
+            "to":"unknown",
+            "error": error,
+            "delay": 0
+            }
+        message_formatted = parser.format_message(message,to_client=True)
         message_len = len(message_formatted)
-        message_len_formatted = parser.format_message_length(
-            message_len, to_user=True)
-        self.send(message_len_formatted, message_formatted, None,connection)
+        message_len_formatted = parser.format_message_length(message_len,to_client=True)
+        print(message_len_formatted)
+        self.send(message_len_formatted,message_formatted,recipient_account=None,connection = connection)
 
     def get_conn(self, account_name):
         for elem in server.connections:
@@ -87,16 +85,8 @@ class Sender:  # class is responsible for sending messages to other users
         print(f"No account named '{account_name}' has been found!")
         return 0
 
-    def send_info(self, account_name):  # we will find connection in Server.connections
+    def send_info(self, account_name):
         pass
-
-    # this function notifies sender that his message is on the server
-    def notify_server_delivery(self):
-        pass
-
-    def notify_client_delivery(self):
-        pass
-# need to create one interface of message wrapping and unwrapping
 
 
 class Parser:  # performs various operations on our messages
@@ -104,20 +94,14 @@ class Parser:  # performs various operations on our messages
         self.encoding = "Windows 1251"
         self.max_header_len = 64
 
-    def delete_message_properties(self, msg, *args):  # type(*args) ==string
-        for argument in args:
-            del msg[argument]
-
-        return msg
-
     def encode(self, message):
         return message.encode(self.encoding)
 
     def decode(self, message):
         return message.decode(self.encoding)
 
-    def format_message_length(self, msg_len, to_user=True):  # msg - int
-        if to_user:  # encoding our message_len
+    def format_message_length(self, msg_len, to_client=True):  # msg - int
+        if to_client:  # encoding our message_len
             msg_len = str(msg_len)
             msg_len = msg_len+" "*(self.max_header_len-len(msg_len))
             msg_len = self.encode(msg_len)
@@ -131,19 +115,19 @@ class Parser:  # performs various operations on our messages
         obj = json.loads(jsn)
         return obj
 
-    def obj_to_json(self, obj):
+    def object_to_json(self, obj):
         json_string = json.dumps(obj)
         return json_string
 
-    def decode_unwrap_message(self, msg):  # used for messages
-        msg = self.decode(msg)
-        msg = self.json_to_obj(msg)
-        return msg
-
-    def encode_wrap_message(self, msg):  # used for messages , not headers
-        msg = self.obj_to_json(msg)
-        msg = self.encode(msg)
-        return msg
+    def format_message(self, msg, to_client=True):
+        if to_client:
+            msg = self.object_to_json(msg)
+            msg = self.encode(msg)
+            return msg
+        else:
+            msg = self.decode(msg)
+            msg = self.json_to_obj(msg)
+            return msg
 
 
 class Server:
@@ -201,11 +185,11 @@ class Server:
         login_message_length = conn.recv(self.HEADERSIZE)
 
         login_message = conn.recv(parser.format_message_length(
-            login_message_length, to_user=False))
-        formatted_login_message = parser.decode_unwrap_message(login_message)
+            login_message_length, to_client=False))
+        formatted_login_message = parser.format_message(login_message, False)
         account_name = formatted_login_message["text"]
-        if account_name == "-disconnect:": 
-            # !need to work here 
+        if account_name == "-disconnect:":
+            # !need to work here
             pass
         is_valid, error = self.validity_check(account_name)
 
@@ -247,7 +231,7 @@ class Server:
                 break
             else:
                 print(f"LoginProcessError: {error}")
-                sender.send_login_rejection(conn,error)
+                sender.send_login_rejection(conn, error)
                 continue
 
         while self.check_if_connected(client_index):
@@ -260,7 +244,7 @@ class Server:
             msg_length = parser.format_message_length(msg_length, False)
             message = conn.recv(msg_length)
             #! there must be a method decoding message
-            unwrpt_message = parser.decode_unwrap_message(message)
+            unwrpt_message = parser.format_message(message, False)
             self.execute_client_command(unwrpt_message)
             print(unwrpt_message)
 
