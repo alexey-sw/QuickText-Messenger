@@ -194,11 +194,11 @@ class Server:
         account_names = list(map(lambda elem:elem[0],self.connections))
         if account_name in account_names:
             indx = self.get_client_index(account_name)
-            if len(self.connections[indx])!=0:
-                return [False, "this account has already been connected"]
+            if len(self.connections[indx])!=1:
+                return [False, "this account is already in use"]
             else:
                 return [True,""]
-        return False,"this account doesn't exist"
+        return [False,"this account doesn't exist"]
 
     def handle_client(self, conn, addr):
         self.online_count += 1
@@ -211,7 +211,7 @@ class Server:
                 print(f"{addr} has been connected as {account_name}")
                 break
             else:
-                print(f"LoginProcessError: invalid account name: {account_name}")
+                print(f"LoginProcessError: {error}")
                 continue
         
         print(f"New connection {addr} has logged in as '{account_name}'")
