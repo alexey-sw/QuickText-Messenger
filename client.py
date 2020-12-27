@@ -80,10 +80,14 @@ class Parser:  # parses and composes message, performs operations on messages
         json_string = json.dumps(obj)
         return json_string
 
+    def json_to_obj(self, jsn):
+        obj = json.loads(jsn)
+        return obj
+
     def add_to_maxlen(self, msg_len):
         msg_len = msg_len+" "*(self-len(msg_len))
 
-    def format_message_length(self, msg_len, for_server=True):  # msg - int
+    def format_message_length(self, msg_len, for_server=True):
         if for_server:  # encoding our message_len
             msg_len = str(msg_len)
             msg_len = msg_len+" "*(self.max_header_len-len(msg_len))
@@ -93,6 +97,16 @@ class Parser:  # parses and composes message, performs operations on messages
             msg_len = self.decode(msg_len)
             msg_len = int(msg_len.strip())
             return msg_len
+
+    def format_message(self, msg, for_server=True):
+        if for_server:
+            msg = self.object_to_json(msg)
+            msg = self.encode(msg)
+            return msg
+        else:
+            msg = self.decode(msg)
+            msg = self.json_to_obj(msg)
+            return msg
 
 
 class Cli:
@@ -147,20 +161,23 @@ class Client:
 
     def start(self):
         global Cli
-        Cli = Cli(client)
-        Cli.start()
+        
         if not self.test_mode:
             try:
                 self.sock.connect(self.SERVERADDR)
             except:
                 print("ServerError: try again later")
                 self.exit_client()
-            data_thread = threading.Thread(
-                target=self.receive_data, args=(self.sock,))
-            data_thread.start()
-
+            else:
+                self.login_process(self.sock)
+                Cli = Cli(client)
+                Cli.start()
+                data_thread = threading.Thread(
+                    target=self.receive_data, args=(self.sock,))
+                data_thread.start()
     # data from server is passed in 2 parts : message_length and message itself
     # there will be 3 types of messages: user messages, error messages and delivered messages
+
     def receive_data(self, socket):
         #! client doesn't differentiate server messages from user messages
         while True:
@@ -177,6 +194,24 @@ class Client:
     def response_from_client(self):  # two stars near the message
         pass
 
+    def login_process(self, socket):
+        while True:
+            account_name = input("Type name of your account: ")
+            login_message_obj = {"text":account_name, #! if account_name is disconnect -> disconnect: 
+                                "from":"unknown",
+                                "delay": 0,
+                                "not_notif_message": True,
+                                "time": parser.get_time()
+                                }  # we create new message object not to change our global message state!
+            login_message_formatted = parser.format_message(
+                login_message_obj, for_server=True) 
+            message_len_formatted = parser.format_message_length(
+                len(login_message_formatted), for_server = True)
+            socket.send(message_len_formatted)
+            socket.send(login_message_formatted)
+
+        # add field for password
+
     def change_message_property(self, name, value):
         self.message_state[name] = value
 
@@ -185,10 +220,10 @@ class Client:
         if update["command"] not in self.setup_commands:
             self.to_send = True  # sending immediately if not delay or switch comamnd
             if update["command"] == "-disconnect:":
-                exit_timer = threading.Timer(2.0,self.exit_client)
+                exit_timer = threading.Timer(2.0, self.exit_client)
                 exit_timer.start()
                 self.change_message_property("not_notif_message", True)
-                # !need to clean message state # except from, time, not notif 
+                # !need to clean message state # except from, time, not notif
             if update["command"] == "-s:":
                 self.change_message_property("not_notif_message", True)
                 self.change_message_property("text", update["text"])

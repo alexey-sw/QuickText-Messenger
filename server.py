@@ -64,7 +64,7 @@ class Sender:  # class is responsible for sending messages to other users
 
     def notify_client_delivery(self):
         pass
-
+# need to create one interface of message wrapping and unwrapping 
 
 class Parser:  # performs various operations on our messages
     def __init__(self):
@@ -133,7 +133,7 @@ class Server:
         }
         # accountname, connection info #! if len of element == 1 -> account is free for use
 
-    def sendInfo(self, conn):
+    def sendInfo(self, conn): # doesn't work! 
         filepath = "info.txt"
         with codecs.open(filepath, "r", "Windows 1251") as file:
             info = file.read()
@@ -168,18 +168,52 @@ class Server:
             return False
         return True
 
-    def add_to_connections(self, connection):  # returns index of our user in array
-        for i in range(len(self.connections)):
-            # if no user is not connected under this account
-            if len(self.connections[i]) == 1:
-                self.connections[i].append(connection)
-                return i  # returns index of our user in array
+    def login_client(self,conn):
+        login_message_length = conn.recv(self.HEADERSIZE)
+        
+        login_message = conn.recv(parser.format_message_length(login_message_length,to_user = False))
+        formatted_login_message = parser.decode_unwrap_message(login_message)
+        account_name =formatted_login_message["text"]
+        if account_name=="-disconnect:":
+            pass
+        is_valid,error = self.validity_check(account_name)
+        
+        return [account_name,is_valid,error]
+        
+    
+    def add_to_connections(self,indx, connection):  # returns index of our user in array
+        self.connections[indx].append(connection)
+        return 0
+    
+    
+    def get_client_index(self,account_name):
+        indx = list(map(lambda elem:elem[0],self.connections)).index(account_name)
+        return indx
+
+    def validity_check(self,account_name):
+        account_names = list(map(lambda elem:elem[0],self.connections))
+        if account_name in account_names:
+            indx = self.get_client_index(account_name)
+            if len(self.connections[indx])!=0:
+                return [False, "this account has already been connected"]
+            else:
+                return [True,""]
+        return False,"this account doesn't exist"
 
     def handle_client(self, conn, addr):
         self.online_count += 1
         print(f"[New connection] {addr} connected")
-        client_index = self.add_to_connections(conn)
-        account_name = self.connections[client_index][0]
+        while True:
+            account_name,is_valid,error = self.login_client(conn) # error is "" if login was successful
+            if is_valid:
+                client_index = self.get_client_index(account_name) # it is easier to operate with client index
+                self.add_to_connections(client_index,conn)# that with our account name 
+                print(f"{addr} has been connected as {account_name}")
+                break
+            else:
+                print(f"LoginProcessError: invalid account name: {account_name}")
+                continue
+        
         print(f"New connection {addr} has logged in as '{account_name}'")
         while self.check_if_connected(client_index):
             try:
