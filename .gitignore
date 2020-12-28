@@ -3,3 +3,4 @@ clientarch.txt
 .vscode
 test.py
 cmds.txt
+__pycache__
