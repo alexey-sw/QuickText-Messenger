@@ -93,7 +93,11 @@ class Client:
             Cli.print_server_message(msg)
             # print(f"Successfully logged in as {obtained_account_val}")
         elif command == "-usr_deliv_success:" or command == "-serv_deliv_success:":
-            Cli.print_server_message(msg)        # ....
+            if command == "-usr_deliv_success:":
+                Cli.print_star(is_second = True)
+            else:
+                print("here")
+                Cli.print_star(is_second = False)
         return
 
     def deliv_response(self, message):  # ? obj<- -> None

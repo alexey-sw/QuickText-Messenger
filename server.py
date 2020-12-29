@@ -48,14 +48,17 @@ class Server:
     def execute_client_command(self, message):  # ? object<- -> None
         message_command = message["command"]
         recipient_account = message["to"]
-        print(recipient_account)
+        delay = message["delay"] # if we want to append to message queue later 
         if message_command == "-s:":
             if self.is_existent(recipient_account):
                 # we only need message_command, functions work with message_obj
                 if self.is_online(recipient_account):
                     sender.send_msg(message)
                 else:
-                    self.update_deliv_queue(message)
+                    append_timer = threading.Timer(delay,self.update_deliv_queue,(message,))
+                    append_timer.start()
+                    
+                    #! this will work out badly in case we have delay specified 
             else:
                 sender.send_deliv_error(message)
 
@@ -111,7 +114,13 @@ class Server:
 
     def update_deliv_queue(self, message):  # ? obj<- -> return None
         recipient_account = message["to"]
-        self.delivery_queue.append([recipient_account, message])
+        if not self.is_online(recipient_account):
+            self.delivery_queue.append([recipient_account, message])
+        else:
+            message["delay"] = 0
+            sender.send_msg(message)
+        return 0 
+            
 
     # returns index of our user in array
     def add_to_connections(self, indx, connection):  # ? int,arr<- ->None
@@ -186,6 +195,7 @@ class Server:
             # need to rewrite it for failure_delivery
             if unwrpt_message["command"] not in self.status_commands:
                 sender.send_server_deliv_notif(unwrpt_message)
+                print(unwrpt_message["command"])
             self.execute_client_command(unwrpt_message)
         return
 

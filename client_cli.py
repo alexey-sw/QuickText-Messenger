@@ -26,8 +26,12 @@ class Cli:
     def colorize_input(self,color):
         pass 
     
-    def print_star(self,is_second = False):
-        pass 
+    def print_star(self,is_second = False): #? bool<- ->None 
+        if is_second:
+            print("*")
+        else:
+            print("*")
+        return 
     
     def cli_interface(self, welc_message):#? string<- -> None 
         # print(welc_message)
