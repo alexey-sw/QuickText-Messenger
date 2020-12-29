@@ -7,9 +7,6 @@ from server_parser import Parser
 
 #! server doesn't parse commands, they come clearly defined  with the message
 
-# TODO: implement delivery confirmation
-# TODO: notification that user is offline and message wasn't sent
-# TODO: implement programm for message_delivery_failure
 
 
 class Server:
@@ -24,7 +21,7 @@ class Server:
         # matrix, each element of array contains 3 vals
         # ! server identifies users using accountname, connection info #! if len of element == 1 -> account is free for use
         self.connections = [["a"], ["b"], ["c"], ["d"], ["e"], ["f"]]
-        self.status_commands = ["-delivery_confirmed:", "-disconnect:"]
+        self.status_commands = ["-delivery_confirmed:", "-d:"]
         self.delivery_queue = []  # * list of objects whose messages have to be delivered
 
     def get_time(self):  # ? ..<-   -> string
@@ -65,7 +62,7 @@ class Server:
         elif message_command == "-info:":
             pass
 
-        elif message_command == "-disconnect:":
+        elif message_command == "-d:":
             self.disconnect_user(message)
 
         elif message_command == "-delivery_confirmed:":
@@ -74,9 +71,9 @@ class Server:
 
     def check_if_connected(self, account_name):  # ? int<- -> bool
         for elem in self.connections:
-            if elem[0]==account_name:
-                return True 
-        return False 
+            if elem[0] == account_name:
+                return True
+        return False
 
     def login_client(self, conn):  # ? arr<-  ->array: [string,bool,string ]
         login_message_length = conn.recv(self.HEADERSIZE)
@@ -85,7 +82,7 @@ class Server:
             login_message_length, to_client=False))
         formatted_login_message = parser.format_message(login_message, False)
         account_name = formatted_login_message["text"]
-        if account_name == "-disconnect:":
+        if account_name == "-d:":
             # !need to work here
             pass
         is_valid, error = self.account_validity_check(account_name)
@@ -140,10 +137,10 @@ class Server:
         if account_name in account_names:
             indx = self.get_client_index(account_name)
             if len(self.connections[indx]) != 1:
-                return [False, "this account is already in use"]
+                return [False, f"Account '{account_name}' is already in use"]
             else:
                 return [True, ""]
-        return [False, "this account doesn't exist"]
+        return [False, f"Account '{account_name}' doesn't exist"]
 
     def is_existent(self, account_name):
         account_names = list(map(lambda elem: elem[0], self.connections))
@@ -201,7 +198,6 @@ class Server:
             thread = threading.Thread(
                 target=self.handle_client, args=(conn, addr))
             thread.start()
-        
 
 
 parser = Parser()

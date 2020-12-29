@@ -82,6 +82,7 @@ class Sender:  # class is responsible for sending messages to other users
             "from": "SERVER",
             "to": account_name,
             "error": "",
+            "text":f"Successfully logged in as {account_name}"
         }
 
         self.send_server_msg(message)
