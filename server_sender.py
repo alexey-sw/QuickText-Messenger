@@ -2,13 +2,13 @@ import threading
 
 #! rework error delivery 
 class Sender:  # class is responsible for sending messages to other users
-    def __init__(self,server,parser):
+    def __init__(self,server,parser): #? class, class <- -> None
         self.encoding = "Windows 1251"
         self.max_header_size = 64
         self.server = server
         self.parser = parser
 
-    def send_msg(self, msg):  # msg - message_object
+    def send_msg(self, msg):  #? obj<- -> None 
         recipient_account = msg["to"]
         delay = msg["delay"]
         msg_formatted = self.parser.format_message(msg, to_client=True)
@@ -23,8 +23,9 @@ class Sender:  # class is responsible for sending messages to other users
         else:
             self.send(message_len_formatted, msg_formatted,
                       recipient_account,is_account = True)
-            
-    def send_server_msg(self,msg): # send server generated messages
+        return  
+       
+    def send_server_msg(self,msg):#? obj<- -> None
         # no delays for this type of messages
         recipient_account = msg["to"]
         msg_formatted = self.parser.format_message(msg,to_client = True)
@@ -32,8 +33,9 @@ class Sender:  # class is responsible for sending messages to other users
         msg_len_formatted = self.parser.format_message_length(msg_len,to_client = True)
         print("send_server_msg")
         self.send(msg_len_formatted,msg_formatted,recipient_account,is_account = True)
-        
-    def send_client_deliv_notif(self,msg): # this function sends one client that his message to another client has been received
+        return 
+    
+    def send_client_deliv_notif(self,msg): #? obj <- -> None
         response_sender = msg["from"]
         message = {
             "from":"SERVER",
@@ -45,7 +47,9 @@ class Sender:  # class is responsible for sending messages to other users
             
         }
         self.send_server_msg(message)
-    def send_server_deliv_notif(self,msg):
+        return None 
+    
+    def send_server_deliv_notif(self,msg): #? obj<- ->None
         # sends to sender that message was delivered 
         message = {
             "from":"SERVER",
@@ -59,7 +63,7 @@ class Sender:  # class is responsible for sending messages to other users
         self.send_server_msg(message)
         pass
     
-    def send(self, msg_len_formatted, msg_formatted,addr, is_account):
+    def send(self, msg_len_formatted, msg_formatted,addr, is_account): #? bytes, bytes, [string or arr], bool<- -> None
         print("send funct")
         if is_account == True:
             connection = self.get_conn(addr) # if account is passed as a param
@@ -68,8 +72,9 @@ class Sender:  # class is responsible for sending messages to other users
             connection = addr
         connection.send(msg_len_formatted)
         connection.send(msg_formatted)
+        return 
 
-    def send_login_affirmation(self, account_name):
+    def send_login_affirmation(self, account_name): # ? string<- -> None 
         print(f"Sending login affirmation to {account_name}")
         message = {
             "command": "-login_accept:",
@@ -80,9 +85,10 @@ class Sender:  # class is responsible for sending messages to other users
         }
 
         self.send_server_msg(message)
+        return
 
     # doesn't work because we don't have account value, if login is unsuccessfult
-    def send_login_rejection(self, connection, error):
+    def send_login_rejection(self, connection, error): #? arr, string <- -> None 
         message = {
             "command": "-login_reject:",
             "time": self.server.get_time(),
@@ -95,9 +101,9 @@ class Sender:  # class is responsible for sending messages to other users
         message_len = len(message_formatted)
         message_len_formatted = self.parser.format_message_length(message_len,to_client=True)
         self.send(message_len_formatted,message_formatted,connection,is_account=False)
+        return
 
-
-    def get_conn(self, account_name):
+    def get_conn(self, account_name): #? string <- -> [array, 0]
         for elem in self.server.connections:
             if elem[0] == account_name:
                 if len(elem) != 1:  # if connection was specified
@@ -108,6 +114,3 @@ class Sender:  # class is responsible for sending messages to other users
 
         print(f"No account named '{account_name}' has been found!")
         return 0
-
-    def send_info(self, account_name):
-        pass

@@ -10,7 +10,7 @@ class Parser:  # parses and composes message, performs operations on messages
         # forgot -last_online:  -help:
         self.max_header_len = 64  # max size of message_len in bytes
 
-    def parse_input(self, user_input):
+    def parse_input(self, user_input): #? string< - -> [ obj or bool ]
         command = self.parse_cmd(user_input)
         text = self.cropMsg(user_input, command)
         time = self.get_time()  # time of input
@@ -19,7 +19,7 @@ class Parser:  # parses and composes message, performs operations on messages
             return {"text": text, "time": time, "command": command}
         return 0
 
-    def delay_arg_correct(self, command, text):
+    def delay_arg_correct(self, command, text): #? string, string<- -> bool
         if command == "-delay:" or command == "-delayall:":
             try:
                 text = int(text)
@@ -31,24 +31,24 @@ class Parser:  # parses and composes message, performs operations on messages
         else:
             return True  # if it is not delay command automatically return true
 
-    def encode(self, msg):
+    def encode(self, msg):  #? string  <- -> bytes 
         msg = msg.encode(self.encoding)
         return msg
 
-    def decode(self, msg):
+    def decode(self, msg): #? bytes <- -> string 
         msg = msg.decode(self.encoding)
         return msg
 
-    def cropMsg(self, msg, cmd):
+    def cropMsg(self, msg, cmd): #? string,string <- -> string 
         cmdlen = len(cmd)
         msg = msg[cmdlen:]
         msg = msg.strip()
         return msg
 
-    def get_time(self):
+    def get_time(self): #? ..<- -> string 
         return time.ctime()
 
-    def parse_cmd(self, msg):
+    def parse_cmd(self, msg): #? string<- -> string
         cmd = ""
         try:
             hyphen_index = msg.index("-")
@@ -68,18 +68,15 @@ class Parser:  # parses and composes message, performs operations on messages
             else:
                 return cmd
 
-    def object_to_json(self, obj):
+    def object_to_json(self, obj): #? obj<- -> string 
         json_string = json.dumps(obj)
         return json_string
 
-    def json_to_obj(self, jsn):
+    def json_to_obj(self, jsn): #? string<- -> object 
         obj = json.loads(jsn)
         return obj
 
-    def add_to_maxlen(self, msg_len):
-        msg_len = msg_len+" "*(self-len(msg_len))
-
-    def format_message_length(self, msg_len, for_server=True):
+    def format_message_length(self, msg_len, for_server=True):#? [int or bytes], bool<- -> [bytes or int]
         if for_server:  # encoding our message_len
             msg_len = str(msg_len)
             msg_len = msg_len+" "*(self.max_header_len-len(msg_len))
@@ -90,7 +87,7 @@ class Parser:  # parses and composes message, performs operations on messages
             msg_len = int(msg_len.strip())
             return msg_len
 
-    def format_message(self, msg, for_server=True):
+    def format_message(self, msg, for_server=True): #? [object or bytes], bool < - ->[bytes or object ]
         if for_server:
             msg = self.object_to_json(msg)
             msg = self.encode(msg)

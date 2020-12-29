@@ -10,9 +10,10 @@ class Cli:
         input_thread = threading.Thread(
             target=self.cli_interface, args=(welc_message,))
         input_thread.start()
-    def print_message(self,message):
+    def print_message(self,message):#? object,arr<- -> None
         print(message["text"])
-    def cli_interface(self, welc_message):
+        return 
+    def cli_interface(self, welc_message):#? string<- -> None 
         # print(welc_message)
         print("Started client ")
         while True:

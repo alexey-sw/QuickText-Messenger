@@ -22,7 +22,7 @@ class Server:
         self.connections = [["a"], ["b"], ["c"], ["d"], [
             "e"], ["f"]]  # ! server identifies users using accountname, connection info #! if len of element == 1 -> account is free for use
         self.message_status_commands = ["-delivery_confirmed:"]
-    def get_time(self):
+    def get_time(self): #? ..<-   -> string
         return time.ctime()
 
     def sendInfo(self, conn):  # doesn't work!
@@ -33,7 +33,7 @@ class Server:
         conn.send(info)
         print(f"info was sent to {conn}")
 
-    def disconnect_user(self, msg):
+    def disconnect_user(self, msg):#? object<-  -> None 
         user_to_disconnect = msg["from"]
         for i in range(len(self.connections)):
             if self.connections[i][0] == user_to_disconnect:
@@ -41,8 +41,9 @@ class Server:
                 self.connections[i] = [user_to_disconnect]
                 print(self.connections, " - connections\n")
                 break
+        return 
     
-    def execute_client_command(self, message):  # message in object repr
+    def execute_client_command(self, message): #? object<- -> None 
         message_command = message["command"]
         if message_command == "-s:":  # we only need message_command, functions work with message_obj
             sender.send_msg(message)
@@ -56,12 +57,12 @@ class Server:
         elif message_command == "-delivery_confirmed:":
             sender.send_client_deliv_notif(message)
 
-    def check_if_connected(self, indx):
+    def check_if_connected(self, indx): #? int<- -> bool
         if len(self.connections[indx]) == 1:
             return False
         return True
 
-    def login_client(self, conn):
+    def login_client(self, conn): #? arr<-  ->array: [string,bool,string ]
         login_message_length = conn.recv(self.HEADERSIZE)
 
         login_message = conn.recv(parser.format_message_length(
@@ -76,16 +77,16 @@ class Server:
         return [account_name, is_valid, error]
 
     # returns index of our user in array
-    def add_to_connections(self, indx, connection):
+    def add_to_connections(self, indx, connection):#? int,arr<- ->None
         self.connections[indx].append(connection)
-        return 0
+        return 
 
-    def get_client_index(self, account_name):
+    def get_client_index(self, account_name): #? string<- ->int 
         indx = list(map(lambda elem: elem[0], self.connections)).index(
             account_name)
         return indx
 
-    def account_validity_check(self, account_name):
+    def account_validity_check(self, account_name):#? string<- ->array:[bool,string]
         account_names = list(map(lambda elem: elem[0], self.connections))
         if account_name in account_names:
             indx = self.get_client_index(account_name)
@@ -95,7 +96,7 @@ class Server:
                 return [True, ""]
         return [False, "this account doesn't exist"]
 
-    def handle_client(self, conn, addr):
+    def handle_client(self, conn, addr): #? arr,string<-  -> None 
         self.online_count += 1
         print(f"[New connection] {addr} connected")
         while True:
@@ -128,9 +129,8 @@ class Server:
             if unwrpt_message["command"] not in self.message_status_commands: # need to rewrite it for failure_delivery 
                 sender.send_server_deliv_notif(unwrpt_message) 
             self.execute_client_command(unwrpt_message)
-
-    def start(self):  # handles all connection and passes each connection for handle_client
-
+        return 
+    def start(self):  #? ..<-  -> None
         self.sock.bind(self.ADDR)
         self.sock.listen()
         print(f"[Listening] Server is listening on {self.IP}")
@@ -139,6 +139,7 @@ class Server:
             thread = threading.Thread(
                 target=self.handle_client, args=(conn, addr))
             thread.start()
+        return 
 
 
 parser = Parser()

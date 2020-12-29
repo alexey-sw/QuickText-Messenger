@@ -81,20 +81,17 @@ class Client:
             decoded_message = parser.format_message(message, for_server=False)
             is_server_message = self.is_from_server(decoded_message)
             if is_server_message: # we don't send notifications for server messages 
-
                 self.execute_server_generated_commands(decoded_message)
-
             else:
                 Cli.print_message(decoded_message)
                 self.deliv_response(decoded_message)
-                print("Message from user: ", decoded_message, "\n\n")
-
+                
     # one star near the message
-    def execute_server_generated_commands(self, msg):
+    def execute_server_generated_commands(self, msg):#? obj<- -> None
         command = msg["command"]
         error = msg["error"]
         if error:
-            print(error.upper())
+            print(error)
         if command == "-login_accept:":
             self.logged_in = True
             obtained_account_val = msg["to"]
@@ -105,9 +102,9 @@ class Client:
         elif command == "-usr_deliv_success:" or command == "-serv_deliv_success:":
             print(msg["text"])
         # ....
-        return 0
+        return 
 
-    def deliv_response(self, message): # notifies server that message has been delivered to user 
+    def deliv_response(self, message):#? obj<- -> None 
         response_message = {
             "from": self.message_state["from"],
             "text": "",
@@ -117,8 +114,9 @@ class Client:
             "delay": 0
         }
         self.send_deliv_response(response_message)
-
-    def login_process(self, socket):
+        return 
+    
+    def login_process(self, socket): #? -> None 
         while not self.logged_in:
             account_name = input("Type name of your account: ")
             login_message_obj = {"text": account_name,  # ! if account_name is disconnect -> disconnect
@@ -133,10 +131,10 @@ class Client:
             socket.send(message_len_formatted)
             socket.send(login_message_formatted)
             self.receive_login_response(socket)
-        return 0
+        return 
         # add field for password
 
-    def change_message_property(self, name, value):
+    def change_message_property(self, name, value): # ? string <- -> [int or string]
         self.message_state[name] = value
 
     def receive_login_response(self, socket):
@@ -146,9 +144,9 @@ class Client:
         message = socket.recv(formatted_msg_len)
         decoded_message = parser.format_message(message, for_server=False)
         self.execute_server_generated_commands(decoded_message)
-
-    def update(self, update):
-
+        return 
+    
+    def update(self, update):#? obj<- -> None 
         if update["command"] not in self.setup_commands:
             self.to_send = True  # sending immediately if not delay or switch comamnd
             if update["command"] == "-disconnect:":
@@ -175,7 +173,7 @@ class Client:
 
     # updates message state and sends message
 
-    def update_message_state(self, msg):
+    def update_message_state(self, msg): #? obj <- -> None 
         self.update(msg)  # updates message state
         # print(self.message_state, " message obj") # for testing
         if self.to_send == True:  # if send flag is true
@@ -189,8 +187,9 @@ class Client:
             self.send(formatted_msg_len, self.sock)
             self.send(formatted_message, self.sock)
             # reset delay
-
-    def send(self, msg, socket):
+        return 
+    
+    def send(self, msg, socket): #? bytes socket<-  -> None 
         if not self.test_mode:
             try:
                 socket.send(msg)
@@ -199,13 +198,13 @@ class Client:
         else:
             print(msg)
 
-    def send_deliv_response(self, msg):
+    def send_deliv_response(self, msg): #? object <- -> None 
         msg_formatted = parser.format_message(msg, for_server=True)
         msg_len_formatted = parser.format_message_length(
             len(msg_formatted), for_server=True)
         self.sock.send(msg_len_formatted)
         self.sock.send(msg_formatted)
-
+        return 
 
 parser = Parser()
 client = Client()
