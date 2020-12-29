@@ -102,7 +102,18 @@ class Sender:  # class is responsible for sending messages to other users
         message_len_formatted = self.parser.format_message_length(message_len,to_client=True)
         self.send(message_len_formatted,message_formatted,connection,is_account=False)
         return
-
+    def send_deliv_error(self,msg): #? object<- ->None
+        response = {
+            "command":"-usr_deliv_failure:",
+            "time": self.server.get_time(),
+            "from": "SERVER",
+            "to":msg["from"],
+            "error": "Such account doesn't exist", # the only reason why it can be 
+            "delay": 0
+        }
+        self.send_server_msg(response)
+        return 
+    
     def get_conn(self, account_name): #? string <- -> [array, 0]
         for elem in self.server.connections:
             if elem[0] == account_name:
