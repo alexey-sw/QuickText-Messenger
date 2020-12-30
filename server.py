@@ -8,7 +8,6 @@ from server_parser import Parser
 #! server doesn't parse commands, they come clearly defined  with the message
 
 
-
 class Server:
     def __init__(self):
         self.online_count = 0
@@ -27,13 +26,6 @@ class Server:
     def get_time(self):  # ? ..<-   -> string
         return time.ctime()
 
-    def sendInfo(self, conn):  # doesn't work!
-        filepath = "info.txt"
-        with codecs.open(filepath, "r", "Windows 1251") as file:
-            info = file.read()
-            info = info.encode("Windows 1251")
-        conn.send(info)
-        print(f"info was sent to {conn}")
 
     def disconnect_user(self, user_account):  # ? object<-  -> None
         for i in range(len(self.connections)):
