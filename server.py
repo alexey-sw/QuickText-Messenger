@@ -35,13 +35,12 @@ class Server:
         conn.send(info)
         print(f"info was sent to {conn}")
 
-    def disconnect_user(self, msg):  # ? object<-  -> None
-        user_to_disconnect = msg["from"]
+    def disconnect_user(self, user_account):  # ? object<-  -> None
         for i in range(len(self.connections)):
-            if self.connections[i][0] == user_to_disconnect:
-                print(f"'{user_to_disconnect}' has been disconnected")
-                self.connections[i] = [user_to_disconnect]
-                print(self.connections, " - connections\n")
+            if self.connections[i][0] == user_account:
+                print(f"'{user_account}' has been disconnected")
+                self.connections[i] = [user_account]
+
                 break
         return
 
@@ -66,7 +65,8 @@ class Server:
             pass
 
         elif message_command == "-d:":
-            self.disconnect_user(message)
+            sender_account = message["from"]
+            self.disconnect_user(sender_account)
 
         elif message_command == "-delivery_confirmed:":
             sender.send_client_deliv_notif(message)
@@ -142,8 +142,7 @@ class Server:
 
     # ? string<- ->array:[bool,string]
     def account_validity_check(self, account_name):
-        account_names = list(map(lambda elem: elem[0], self.connections))
-        if account_name in account_names:
+        if self.is_existent(account_name):
             indx = self.get_client_index(account_name)
             if len(self.connections[indx]) != 1:
                 return [False, f"Account '{account_name}' is already in use"]
@@ -184,19 +183,20 @@ class Server:
         while self.check_if_connected(account_name):
             try:
                 msg_length = conn.recv(self.HEADERSIZE)
-            except:
-                print(
-                    f"{account_name} disconnected from the server")
-                break
-            msg_length = parser.format_message_length(msg_length, False)
-            message = conn.recv(msg_length)
+            
+                msg_length = parser.format_message_length(msg_length, False)
+                message = conn.recv(msg_length)
 
-            unwrpt_message = parser.format_message(message, False)
-            # need to rewrite it for failure_delivery
-            if unwrpt_message["command"] not in self.status_commands:
-                sender.send_server_deliv_notif(unwrpt_message)
-                print(unwrpt_message["command"])
-            self.execute_client_command(unwrpt_message)
+                unwrpt_message = parser.format_message(message, False)
+                # need to rewrite it for failure_delivery
+                if unwrpt_message["command"] not in self.status_commands:
+                    sender.send_server_deliv_notif(unwrpt_message)
+                    print(unwrpt_message["command"])
+                self.execute_client_command(unwrpt_message)
+            except:
+                print(f"{account_name} disconnected from the server")
+                self.disconnect_user(account_name)
+                break
         return
 
     def start(self):  # ? ..<-  -> None
