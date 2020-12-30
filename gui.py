@@ -12,21 +12,9 @@ class Gui():
 
     def start(self):
         app = QApplication([])  # in properties there will be account_name
-        global small_window
-        global layout
-        layout = QGridLayout()
-        small_window = QWidget()
-        small_window.setLayout(layout)
-        for i in range(10):
-            for j in range(5):
-                label = QLabel()
-                label.setText("hello")
-                layout.addWidget(label, i, j)
-
         self.window = self.window_class()
         self.window.show()
         app.exec_()
-        self.window.get_delay()
 
 
 class Main_Window(QDialog):
@@ -38,9 +26,12 @@ class Main_Window(QDialog):
         self.select_button = self.select_button
         self.timer = self.timeEdit
         self.scrollArea = Qt.QScrollArea(self) # need to add widget into a scroll area with layout 
+        self.widget =QWidget()
+
         self.connect_widgets()
         self.message_field = self.message_edit  # message text input
         self.h = 200
+
         
         
     def get_delay(self):
@@ -65,10 +56,15 @@ class Main_Window(QDialog):
         print(delay)
 
     def connect_widgets(self):
+        global layout
+       
         self.send_button.clicked.connect(self.send_button_clicked)
         self.select_button.clicked.connect(self.select_button_clicked)
-        self.scrollArea.setWidget(small_window)
-    
+        layout = QGridLayout()
+        self.scrollArea.setLayout(layout)
+        for i in range(5):
+            label = QLabel("helo")
+            layout.addWidget(label)
         self.scrollArea.setGeometry(200,200,200,200)
         self.scrollArea.show()
 
@@ -83,8 +79,7 @@ class Main_Window(QDialog):
         new_tab.setGeometry(200, self.h, 200, 200)
         new_tab.setMargin(20)
         layout.addWidget(new_tab)
-        small_window.setLayout(layout)
-        self.scrollArea.setWidget(small_window)
+        print("added")
         new_tab.show()
         self.h+=200
 
