@@ -98,6 +98,8 @@ class Client:
             else:
                 print("here")
                 Cli.print_star(is_second = False)
+        elif command == "-account_status:":
+            print("-account_status: " ,msg["text"])
         return
 
     def deliv_response(self, message):  # ? obj<- -> None
