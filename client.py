@@ -85,8 +85,10 @@ class Client:
         error = msg["error"]
         if error:
             print(msg)
-            Cli.print_error_message(msg)
         if command == "-login_accept:":
+            global Cli
+            Cli = Cli(client, parser)
+            Cli.start()
             self.logged_in = True
             obtained_account_val = msg["to"]
             self.change_message_property("from", obtained_account_val)
@@ -142,8 +144,6 @@ class Client:
             message_len, False)
         message = socket.recv(formatted_msg_len)
         decoded_message = parser.format_message(message, for_server=False)
-        Cli = Cli(client, parser)
-        Cli.start()
         self.execute_server_generated_commands(decoded_message)
         return
 
