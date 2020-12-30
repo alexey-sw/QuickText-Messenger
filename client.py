@@ -37,11 +37,12 @@ class Client:
                 self.exit_client()
             else:
                 self.login_process(self.sock)
-                gui = Gui(Main_Window,self)
-                gui.start()
                 data_thread = threading.Thread(
                     target=self.receive_data, args=(self.sock,))
                 data_thread.start()
+                gui = Gui(Main_Window,self)
+                gui.start()
+                
 
     def get_time(self):
         return time.ctime()
@@ -55,7 +56,7 @@ class Client:
         return False
 
     def receive_data(self, socket):
-        #! client doesn't differentiate server messages from user messages
+        # doesnt' receive messages from users 
         while True:
             message_len = socket.recv(64)
             formatted_msg_len = parser.format_message_length(
@@ -91,11 +92,11 @@ class Client:
         return
 
     def deliv_response(self, message):  # ? obj<- -> None
+        sender = message["from"]
         response_message = {
-            "from": self.message_state["from"],
+            "from": self.account,
             "text": "",
-            # one who sent us this message gets response
-            "to": message["from"],
+            "to": sender,
             "time": self.get_time(),
             "command": "-delivery_confirmed:",
             "delay": 0
@@ -120,13 +121,7 @@ class Client:
             self.receive_login_response(socket)
         return
         # add field for password
-
-    # ? string <- -> [int or string]
-    # def change_message_property(self, name, value):
-    #     self.message_state[name] = value
-
-    def receive_login_response(self, socket):
-        
+    def receive_login_response(self, socket): 
         message_len = socket.recv(64)
         formatted_msg_len = parser.format_message_length(
             message_len, False)
@@ -143,7 +138,6 @@ class Client:
         self.send_bytes(formatted_msg)
         return 
         
-
     def send_bytes(self, msg):  # ? bytes socket<-  -> None
         if not self.test_mode:
             try:
