@@ -33,6 +33,7 @@ class Main_Window(QDialog):
         self.layout = QGridLayout()
         self.setup_widgets()
         self.message_field = self.message_edit  # message text input
+        self.account_field = self.account_select
         self.h = 200
 
     def closeEvent(self, *args, **kwargs):
@@ -49,16 +50,35 @@ class Main_Window(QDialog):
         return [hours, mins]
 
     def get_message_text(self):  # ? ..<- -> string
-        text = self.message_field.text()
+        text = str(self.message_field.text())
         self.message_field.clear()
         return text
 
     def send_button_clicked(self):  # ? ..<- -> None
+        recipient_account = self.get_account_val()
+        # does exist? 
         text = self.get_message_text()
         delay = self.get_delay()[0]  # gets only hours
-        self.create_message_tab(text)
-        return
-
+        self.create_message_tab(text,from_this_device=True)
+        message = self.compose_message(recipient_account,text,delay)
+        self.client.send_message_obj(message)
+        return None 
+    
+    def get_account_val(self):
+        value = str(self.account_field.text())
+        print(type(value))
+        return value 
+    
+    def compose_message(self,account,text,delay):  #? string, int (arr in future ) <-- --> dict 
+        msg = {
+            "to":account,
+            "from":self.client.account,
+            "delay":delay,
+            "text":text,
+            "command":"-s:",
+            "time":self.client.get_time()
+        }
+        return msg 
     def setup_widgets(self):  # ? ..<- -> None
         self.send_button.clicked.connect(self.send_button_clicked)
         self.select_button.clicked.connect(self.select_button_clicked)

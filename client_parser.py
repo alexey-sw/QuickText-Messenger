@@ -17,7 +17,6 @@ class Parser:  # parses and composes message, performs operations on messages
     #         return {"text": text, "time": time, "command": command}
     #     return 0
 
-
     def encode(self, msg):  # ? string  <- -> bytes
         msg = msg.encode(self.encoding)
         return msg
@@ -58,8 +57,8 @@ class Parser:  # parses and composes message, performs operations on messages
         return obj
 
     # ? [int or bytes], bool<- -> [bytes or int]
-    def format_message_length(self, msg_len, for_server=True):
-        if for_server:  # encoding our message_len
+    def format_message_length(self, msg_len, to_server=True):
+        if to_server:  # encoding our message_len
             msg_len = str(msg_len)
             msg_len = msg_len+" "*(self.max_header_len-len(msg_len))
             msg_len = self.encode(msg_len)
@@ -70,8 +69,8 @@ class Parser:  # parses and composes message, performs operations on messages
             return msg_len
 
     # ? [object or bytes], bool < - ->[bytes or object ]
-    def format_message(self, msg, for_server=True):
-        if for_server:
+    def format_message(self, msg, to_server=True):
+        if to_server:
             msg = self.object_to_json(msg)
             msg = self.encode(msg)
             return msg
