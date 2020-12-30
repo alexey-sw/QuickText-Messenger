@@ -1,12 +1,13 @@
 import PyQt5
-from PyQt5.QtWidgets import QApplication, QMainWindow,QTextBrowser,QWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTextBrowser, QWidget, QFrame
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QDialog, QLabel,QGridLayout
+from PyQt5.QtWidgets import QDialog, QLabel, QGridLayout
 from PyQt5 import uic
 from PyQt5 import Qt
 
+
 class Gui():
-    def __init__(self, window):
+    def __init__(self, window):  # ? class<- -> None
         self.window_class = window
         self.window = None
 
@@ -25,16 +26,15 @@ class Main_Window(QDialog):
         self.send_button = self.send_button
         self.select_button = self.select_button
         self.timer = self.timeEdit
-        self.scrollArea = Qt.QScrollArea(self) # need to add widget into a scroll area with layout 
-        self.widget =QWidget()
-
-        self.connect_widgets()
+        # need to add widget into a scroll area with layout
+        self.scrollArea = self.messageArea
+        self.widget = QFrame()
+        self.layout = QGridLayout()
+        self.setup_widgets()
         self.message_field = self.message_edit  # message text input
         self.h = 200
 
-        
-        
-    def get_delay(self):
+    def get_delay(self):  # ? ...<- -> array of int
         delay_obj = self.timer.dateTime()
         delay_str = delay_obj.toString()
         colon_ind = delay_str.index(":")
@@ -42,54 +42,43 @@ class Main_Window(QDialog):
         mins = int(delay_str[colon_ind+1:colon_ind+3])
         return [hours, mins]
 
-    def get_message_text(self):
+    def get_message_text(self):  # ? ..<- -> string
         text = self.message_field.text()
         self.message_field.clear()
-        
         return text
 
-    def send_button_clicked(self):
+    def send_button_clicked(self):  # ? ..<- -> None
         text = self.get_message_text()
         delay = self.get_delay()[0]  # gets only hours
-        self.create_message_tab("hello")
-        print(text)
-        print(delay)
+        self.create_message_tab(text)
+        return
 
-    def connect_widgets(self):
-        global layout
-       
+    def setup_widgets(self):  # ? ..<- -> None
         self.send_button.clicked.connect(self.send_button_clicked)
         self.select_button.clicked.connect(self.select_button_clicked)
-        layout = QGridLayout()
-        self.scrollArea.setLayout(layout)
-        for i in range(5):
-            label = QLabel("helo")
-            layout.addWidget(label)
-        self.scrollArea.setGeometry(200,200,200,200)
-        self.scrollArea.show()
+        self.scrollArea.setWidgetResizable(True)
+        self.widget.setLayout(self.layout)
+        self.scrollArea.setWidget(self.widget)
+        self.scrollArea.focusNextPrevChild(True)
+        return None
 
-    def select_button_clicked(self):
+    def select_button_clicked(self):  # ? ..<- -> None
         print("select_button_clicked")
+        return None
 
-    def create_message_tab(self, text, from_this_device=False):
+    def create_message_tab(self, text, from_this_device=False):  # ? string ,bool<- -> none
         new_tab = QLabel(self.scrollArea)
-        
-        new_tab.setText("helwlleoajefajiiefjinsdf")
-        new_tab.setStyleSheet("background-color:green;")
-        new_tab.setGeometry(200, self.h, 200, 200)
-        new_tab.setMargin(20)
-        layout.addWidget(new_tab)
-        print("added")
+        backgnd_color = "#a3ffdc" if not(from_this_device) else "#a2f481"
+        new_tab.setText(text)
+        new_tab.setStyleSheet(
+            f"background-color:{backgnd_color};font:20px Arial")
+        new_tab.setFixedHeight(50)
+        self.layout.addWidget(new_tab)
         new_tab.show()
-        self.h+=200
+        self.h += 200
+
+        return
 
 
 GUI = Gui(Main_Window)
 GUI.start()
-
-
-# if __name__ == '__main__':
-#     app = QApplication(sys.argv)
-#     ex = Main_Window()
-#     ex.show()
-#     sys.exit(app.exec_())
