@@ -1,27 +1,28 @@
 import PyQt5
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTextBrowser, QWidget, QFrame
+from PyQt5.QtWidgets import QApplication, QTextBrowser, QWidget, QFrame
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QDialog, QLabel, QGridLayout
 from PyQt5 import uic
-from PyQt5 import Qt
-
+from PyQt5 import QtGui
 
 class Gui():
-    def __init__(self, window):  # ? class<- -> None
+    def __init__(self, window,client):  # ? class, instance<- -> None
         self.window_class = window
         self.window = None
+        self.client = client 
 
     def start(self):
         app = QApplication([])  # in properties there will be account_name
-        self.window = self.window_class()
+        self.window = self.window_class(self.client)
         self.window.show()
         app.exec_()
 
 
 class Main_Window(QDialog):
 
-    def __init__(self):
+    def __init__(self,client):
         super().__init__()
+        self.client = client
         uic.loadUi("messenger_gui.ui", self)
         self.send_button = self.send_button
         self.select_button = self.select_button
@@ -33,6 +34,11 @@ class Main_Window(QDialog):
         self.setup_widgets()
         self.message_field = self.message_edit  # message text input
         self.h = 200
+
+    def closeEvent(self, *args, **kwargs):
+        
+        print("hello world ")
+        self.client.exit_client()
 
     def get_delay(self):  # ? ...<- -> array of int
         delay_obj = self.timer.dateTime()
@@ -80,5 +86,4 @@ class Main_Window(QDialog):
         return
 
 
-GUI = Gui(Main_Window)
-GUI.start()
+

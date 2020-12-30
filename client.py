@@ -4,7 +4,9 @@ import time
 import json
 import os
 from client_parser import Parser
-from client_cli import Cli
+from gui import Gui,Main_Window
+
+
 
 class Client:
     def __init__(self):
@@ -34,13 +36,9 @@ class Client:
         self.setup_commands = ["-delay:", "-swtch:", "-delayall:"]
         self.help_string = "This is help string "  # * needs change
         self.logged_in = False
-
-    def exit_client(self):
-        os._exit(0)
+        self.gui = None 
 
     def start(self):
-        
-
         if not self.test_mode:
             try:
                 self.sock.connect(self.SERVERADDR)
@@ -49,15 +47,18 @@ class Client:
                 self.exit_client()
             else:
                 self.login_process(self.sock)
+                gui = Gui(Main_Window,self)
+                gui.start()
                 data_thread = threading.Thread(
                     target=self.receive_data, args=(self.sock,))
                 data_thread.start()
 
     def get_time(self):
         return time.ctime()
-    # data from server is passed in 2 parts : message_length and message itself
-    # there will be 3 types of messages: user messages, error messages and delivered messages
-
+    
+    def exit_client(self):
+        os._exit(0)
+        
     def is_from_server(self, msg):
         if msg["from"] == "SERVER":
             return True
@@ -75,7 +76,7 @@ class Client:
             if is_server_message:  # we don't send notifications for server messages
                 self.execute_server_generated_commands(decoded_message)
             else:
-                Cli.print_user_message(decoded_message)
+                print(decoded_message)
                 self.deliv_response(decoded_message)
 
     # one star near the message
@@ -85,19 +86,15 @@ class Client:
         error = msg["error"]
         if error:
             print(msg)
-            Cli.print_error_message(msg)
         if command == "-login_accept:":
             self.logged_in = True
             obtained_account_val = msg["to"]
             self.change_message_property("from", obtained_account_val)
-            Cli.print_server_message(msg)
-            # print(f"Successfully logged in as {obtained_account_val}")
         elif command == "-usr_deliv_success:" or command == "-serv_deliv_success:":
             if command == "-usr_deliv_success:":
-                Cli.print_star(is_second = True)
+                print("firststar")
             else:
-                print("here")
-                Cli.print_star(is_second = False)
+                print("secondstar")
         elif command == "-account_status:":
             print("-account_status: " ,msg["text"])
         return
@@ -138,14 +135,12 @@ class Client:
         self.message_state[name] = value
 
     def receive_login_response(self, socket):
-        global Cli
+        
         message_len = socket.recv(64)
         formatted_msg_len = parser.format_message_length(
             message_len, False)
         message = socket.recv(formatted_msg_len)
         decoded_message = parser.format_message(message, for_server=False)
-        Cli = Cli(client, parser)
-        Cli.start()
         self.execute_server_generated_commands(decoded_message)
         return
 
