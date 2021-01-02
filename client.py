@@ -26,7 +26,8 @@ class Client:
         # self.setup_commands = ["-delay:", "-swtch:", "-delayall:"]
         self.help_string = "This is help string "  # * needs change
         self.logged_in = False
-        self.gui = None 
+        self.gui = None
+        self.messages_to_display = []
 
     def start(self):
         if not self.test_mode:
@@ -40,8 +41,10 @@ class Client:
                 data_thread = threading.Thread(
                     target=self.receive_data, args=(self.sock,))
                 data_thread.start()
-                gui = Gui(Main_Window,self)
-                gui.start()
+                self.gui = Gui(Main_Window,self,self.messages_to_display) # need to launch gui code in the same thread 
+                self.gui.start()
+                
+                
                 
 
     def get_time(self):
@@ -56,6 +59,7 @@ class Client:
         return False
 
     def receive_data(self, socket):
+        
         # doesnt' receive messages from users 
         while True:
             message_len = socket.recv(64)
@@ -64,11 +68,11 @@ class Client:
             message = socket.recv(formatted_msg_len)
             decoded_message = parser.format_message(message, to_server=False)
             is_server_message = self.is_from_server(decoded_message)
-            print(decoded_message)
             if is_server_message:  # we don't send notifications for server messages
                 self.execute_server_generated_commands(decoded_message)
             else:
-                print(decoded_message)
+                print(f"{decoded_message['text']} will be displayed")
+                self.messages_to_display.append(decoded_message["text"])
                 self.deliv_response(decoded_message)
 
     # one star near the message

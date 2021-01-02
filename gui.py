@@ -1,21 +1,46 @@
 import PyQt5
 from PyQt5.QtWidgets import QApplication, QTextBrowser, QWidget, QFrame
-from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QDialog, QLabel, QGridLayout
 from PyQt5 import uic
-from PyQt5 import QtGui
+from PyQt5.QtCore import QTimer
+
+from PyQt5 import QtCore
+import sys
+import threading
 
 class Gui():
-    def __init__(self, window,client):  # ? class, instance<- -> None
+    valueUpdated = QtCore.pyqtSignal(int)
+    
+    def __init__(self, window,client,message_arr):  # ? class, instance<- -> None
         self.window_class = window
         self.window = None
         self.client = client 
+        self.messages_to_display = message_arr 
+        self.timer =QTimer()
 
     def start(self):
+        self.setup_qtimer()
         app = QApplication([])  # in properties there will be account_name
         self.window = self.window_class(self.client)
         self.window.show()
-        app.exec_()
+        self.timer.start()
+        sys.exit(app.exec_())
+    
+    def setup_qtimer(self):
+        self.timer.setInterval(1000)# check message every 1000
+        self.timer.timeout.connect(self.check_messages)
+    
+    def check_messages(self):
+        print("checking messages")
+        print(self.messages_to_display)
+        if self.messages_to_display!=[]:
+            for i in range(len(self.messages_to_display)):
+                new_message = self.messages_to_display[i]
+                self.window.create_message_tab(new_message,from_this_device = False)
+            self.messages_to_display.clear()
+            
+            
+      
 
 
 class Main_Window(QDialog):
@@ -34,10 +59,9 @@ class Main_Window(QDialog):
         self.setup_widgets()
         self.message_field = self.message_edit  # message text input
         self.account_field = self.account_select
-        self.h = 200
+        self.h = 50
 
     def closeEvent(self, *args, **kwargs):
-        
         print("hello world ")
         self.client.exit_client()
 
@@ -66,7 +90,6 @@ class Main_Window(QDialog):
     
     def get_account_val(self):
         value = str(self.account_field.text())
-        print(type(value))
         return value 
     
     def compose_message(self,account,text,delay):  #? string, int (arr in future ) <-- --> dict 
@@ -102,7 +125,6 @@ class Main_Window(QDialog):
         self.layout.addWidget(new_tab)
         new_tab.show()
         self.h += 200
-
         return
 
 
