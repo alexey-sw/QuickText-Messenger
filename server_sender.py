@@ -126,3 +126,21 @@ class Sender:  # class is responsible for sending messages to other users
 
         print(f"No account named '{account_name}' has been found!")
         return 0
+    
+    def send_account_status(self,message):
+        account = message["text"]
+        is_existent = self.server.is_existent(account)
+        is_online = self.server.is_online(account) if is_existent else False
+        print(is_existent,is_online)
+        message_obj = {
+            "to":message["from"],
+            "time":self.server.get_time(),
+            "from":"SERVER",
+            "error":"",
+            "is_online":is_online,
+            "is_existent":is_existent,
+            "command":"-account_status:"
+        }
+        
+        self.send_server_msg(message_obj)
+        return 

@@ -7,7 +7,8 @@ from PyQt5.QtCore import QTimer
 from PyQt5 import QtCore
 import sys
 import threading
-
+# todo: add select value 
+# todo: colorize messages that have been sent 
 class Gui():
     valueUpdated = QtCore.pyqtSignal(int)
     
@@ -25,9 +26,31 @@ class Gui():
         self.window.show()
         self.timer.start()
         sys.exit(app.exec_())
-    
+        
+    def check_status(self):
+        is_existent = self.client.recipient_account_status["is_existent"]
+        is_online = self.client.recipient_account_status["is_online"]
+        is_checked = self.client.recipient_account_status["status_checked"]
+        if is_checked==None:
+            print("still checking account status")
+        elif is_checked ==False:
+            
+            self.client.recipient_account_status["status_checked"]= True
+            if is_existent==True:
+                self.window.change_button_color(self.window.select_button,"#00ff7f")
+                print("exists")
+                if is_online==True:
+                    self.window.change_button_color(self.window.select_button,"#009900")
+                    print("online")
+            else:
+                self.window.change_button_color(self.window.select_button,"red")
+                self.window.clear_field(self.window.account_field)
+
+        elif is_checked ==True:
+            pass
+        
     def setup_qtimer(self):
-        self.timer.setInterval(1000)# check message every 1000
+        self.timer.setInterval(1000)# check message and status 
         self.timer.timeout.connect(self.check_messages)
     
     def check_messages(self):
@@ -38,6 +61,7 @@ class Gui():
                 new_message = self.messages_to_display[i]
                 self.window.create_message_tab(new_message,from_this_device = False)
             self.messages_to_display.clear()
+        self.check_status()
             
             
       
@@ -49,17 +73,25 @@ class Main_Window(QDialog):
         super().__init__()
         self.client = client
         uic.loadUi("messenger_gui.ui", self)
-        self.send_button = self.send_button
-        self.select_button = self.select_button
+        
         self.timer = self.timeEdit
-        # need to add widget into a scroll area with layout
         self.scrollArea = self.messageArea
+        self.scrollbar = self.scrollArea.verticalScrollBar()
+        
         self.widget = QFrame()
         self.layout = QGridLayout()
         self.setup_widgets()
+        
+        self.send_button = self.send_button
+        self.select_button = self.select_button
         self.message_field = self.message_edit  # message text input
         self.account_field = self.account_select
-        self.h = 50
+        
+        self.message_height = 30# height in px
+        self.message_font_size = 14 
+        
+        self.select_button_value = ""
+        
 
     def closeEvent(self, *args, **kwargs):
         print("hello world ")
@@ -75,21 +107,30 @@ class Main_Window(QDialog):
 
     def get_message_text(self):  # ? ..<- -> string
         text = str(self.message_field.text())
-        self.message_field.clear()
         return text
-
-    def send_button_clicked(self):  # ? ..<- -> None
-        recipient_account = self.get_account_val()
-        # does exist? 
-        text = self.get_message_text()
-        delay = self.get_delay()[0]  # gets only hours
-        self.create_message_tab(text,from_this_device=True)
-        message = self.compose_message(recipient_account,text,delay)
-        self.client.send_message_obj(message)
+    def change_button_color(self,button,color):
+        button.setStyleSheet(f"background-color:{color}")
         return None 
+    def send_button_clicked(self):  # ? ..<- -> None
+        
+        recipient_account = self.get_account_val()
+        if recipient_account:
+            
+        # does exist? 
+            text = self.get_message_text()
+            self.clear_field(self.message_field)
+            delay = self.get_delay()[0]  # gets only hours
+            self.create_message_tab(text,from_this_device=True)
+            message = self.compose_message(recipient_account,text,delay)
+            self.client.send_message_obj(message)
+            return None 
+    
+    def clear_field(self,field):
+        field.clear()
+        return 
     
     def get_account_val(self):
-        value = str(self.account_field.text())
+        value = self.client.recipient_account_status["account"]
         return value 
     
     def compose_message(self,account,text,delay):  #? string, int (arr in future ) <-- --> dict 
@@ -111,20 +152,29 @@ class Main_Window(QDialog):
         self.scrollArea.focusNextPrevChild(True)
         return None
 
-    def select_button_clicked(self):  # ? ..<- -> None
-        print("select_button_clicked")
+    def select_button_clicked(self):  # ? ..<- -> None 
+        #! firstly we need to check in a local database, when in global(server database)
+        recipient_account_value = self.account_select.text()
+        self.client.get_account_status(recipient_account_value)
+        self.change_button_color(self.select_button,"yellow")
         return None
-
+    
+    def scroll_to_message(self):
+        
+        self.scrollbar.setValue(self.scrollbar.maximum())
+    
+    
     def create_message_tab(self, text, from_this_device=False):  # ? string ,bool<- -> none
         new_tab = QLabel(self.scrollArea)
         backgnd_color = "#a3ffdc" if not(from_this_device) else "#a2f481"
         new_tab.setText(text)
         new_tab.setStyleSheet(
-            f"background-color:{backgnd_color};font:20px Arial")
-        new_tab.setFixedHeight(50)
+            f"background-color:{backgnd_color};font:{self.message_font_size}px Arial")
+        new_tab.setFixedHeight(self.message_height)
         self.layout.addWidget(new_tab)
         new_tab.show()
-        self.h += 200
+        scroll_timer = threading.Timer(1.0,self.scroll_to_message)
+        scroll_timer.start()
         return
 
 

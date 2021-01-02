@@ -27,7 +27,15 @@ class Client:
         self.help_string = "This is help string "  # * needs change
         self.logged_in = False
         self.gui = None
-        self.messages_to_display = []
+        self.messages_to_display = [] # this will be a database query 
+        self.recipient_account_status = {
+            "account":None, # none if account doesn't exist
+            "is_existent":None,
+            "is_online":None,
+            "status_checked":None # None is used when we are in the process
+            # status_checked is the main flag: None if we are in process, false if values have been obtained but gui hasn't
+            # displayed info yet, true if gui has displayed the value 
+        }
 
     def start(self):
         if not self.test_mode:
@@ -44,9 +52,6 @@ class Client:
                 self.gui = Gui(Main_Window,self,self.messages_to_display) # need to launch gui code in the same thread 
                 self.gui.start()
                 
-                
-                
-
     def get_time(self):
         return time.ctime()
     
@@ -60,7 +65,6 @@ class Client:
 
     def receive_data(self, socket):
         
-        # doesnt' receive messages from users 
         while True:
             message_len = socket.recv(64)
             formatted_msg_len = parser.format_message_length(
@@ -77,7 +81,6 @@ class Client:
 
     # one star near the message
     def execute_server_generated_commands(self, msg):  # ? obj<- -> None
-        
         command = msg["command"]
         error = msg["error"]
         if error:
@@ -92,7 +95,8 @@ class Client:
             else:
                 print("secondstar")
         elif command == "-account_status:":
-            print("-account_status: " ,msg["text"])
+            print(msg)
+            self.update_recipient_account_status(msg)
         return
 
     def deliv_response(self, message):  # ? obj<- -> None
@@ -114,7 +118,8 @@ class Client:
             login_message_obj = {"text": account_name,  # ! if account_name is disconnect -> disconnect
                                  "from": "unknown",
                                  "delay": 0,
-                                 "time": parser.get_time()
+                                 "time": parser.get_time(),
+                                 "to":"SERVER"
                                  }  # we create new message object not to change our global message state!
             login_message_formatted = parser.format_message(
                 login_message_obj, to_server=True)
@@ -141,7 +146,20 @@ class Client:
         self.send_bytes(formatted_msg_len)
         self.send_bytes(formatted_msg)
         return 
-        
+    
+    def get_account_status(self,account):
+        self.recipient_account_status["account"] = account
+        self.recipient_account_status["status_checked"] = None 
+        message_obj = {
+            "text": account,  # ! if account_name is disconnect -> disconnect
+            "from": self.account,
+            "delay": 0,
+            "time": parser.get_time(),
+            "to":"SERVER",
+            "command":"-check_status"
+        }
+        self.send_message_obj(message_obj)
+    
     def send_bytes(self, msg):  # ? bytes socket<-  -> None
         if not self.test_mode:
             try:
@@ -160,7 +178,14 @@ class Client:
         self.sock.send(msg_len_formatted)
         self.sock.send(msg_formatted)
         return
-
+    
+    def update_recipient_account_status(self,message):
+        self.recipient_account_status["is_existent"] = message["is_existent"]
+        self.recipient_account_status["is_online"] = message["is_online"]
+        if not message["is_existent"]:
+            self.recipient_account_status["is_existent"] =None 
+        self.recipient_account_status["status_checked"] = False
+        return 
 
 parser = Parser()
 client = Client()

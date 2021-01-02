@@ -40,6 +40,8 @@ class Server:
         message_command = message["command"]
         recipient_account = message["to"]
         delay = message["delay"] # if we want to append to message queue later 
+        sender_account = message["from"]
+        
         if message_command == "-s:":
             if self.is_existent(recipient_account):
                 # we only need message_command, functions work with message_obj
@@ -57,11 +59,13 @@ class Server:
             pass
 
         elif message_command == "-d:":
-            sender_account = message["from"]
             self.disconnect_user(sender_account)
 
         elif message_command == "-delivery_confirmed:":
             sender.send_client_deliv_notif(message)
+        elif message_command == "-check_status":
+            sender.send_account_status(message)
+            
         return
 
     def check_if_connected(self, account_name):  # ? int<- -> bool
@@ -180,6 +184,7 @@ class Server:
                 message = conn.recv(msg_length)
 
                 unwrpt_message = parser.format_message(message, False)
+                print(unwrpt_message)
                 # need to rewrite it for failure_delivery
                 if unwrpt_message["command"] not in self.status_commands:
                     sender.send_server_deliv_notif(unwrpt_message)
