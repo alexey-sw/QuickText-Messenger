@@ -32,7 +32,7 @@ class Gui():
         is_online = self.client.recipient_account_status["is_online"]
         is_checked = self.client.recipient_account_status["status_checked"]
         if is_checked==None:
-            print("still checking account status")
+            pass
         elif is_checked ==False:
             
             self.client.recipient_account_status["status_checked"]= True
@@ -48,20 +48,22 @@ class Gui():
 
         elif is_checked ==True:
             pass
-        
-    def setup_qtimer(self):
+    
+    def check_delivered_messages(self):
+        pass
+    
+    def setup_qtimer(self):#? None < -- --> None 
         self.timer.setInterval(1000)# check message and status 
         self.timer.timeout.connect(self.check_messages)
     
-    def check_messages(self):
-        print("checking messages")
-        print(self.messages_to_display)
+    def check_messages(self): #? None < -- --> None 
         if self.messages_to_display!=[]:
             for i in range(len(self.messages_to_display)):
                 new_message = self.messages_to_display[i]
                 self.window.create_message_tab(new_message,from_this_device = False)
             self.messages_to_display.clear()
         self.check_status()
+        self.check_delivered_messages()
             
             
       
@@ -91,9 +93,9 @@ class Main_Window(QDialog):
         self.message_font_size = 14 
         
         self.select_button_value = ""
-        
+        self.widget_ind=0
 
-    def closeEvent(self, *args, **kwargs):
+    def closeEvent(self, *args, **kwargs): # ? None <-- --> None 
         print("hello world ")
         self.client.exit_client()
 
@@ -108,9 +110,11 @@ class Main_Window(QDialog):
     def get_message_text(self):  # ? ..<- -> string
         text = str(self.message_field.text())
         return text
-    def change_button_color(self,button,color):
+    
+    def change_button_color(self,button,color): # ? obj inst, string<-- --> None 
         button.setStyleSheet(f"background-color:{color}")
         return None 
+    
     def send_button_clicked(self):  # ? ..<- -> None
         
         recipient_account = self.get_account_val()
@@ -125,7 +129,7 @@ class Main_Window(QDialog):
             self.client.send_message_obj(message)
             return None 
     
-    def clear_field(self,field):
+    def clear_field(self,field):#? object inst<-- --> None 
         field.clear()
         return 
     
@@ -143,6 +147,7 @@ class Main_Window(QDialog):
             "time":self.client.get_time()
         }
         return msg 
+    
     def setup_widgets(self):  # ? ..<- -> None
         self.send_button.clicked.connect(self.send_button_clicked)
         self.select_button.clicked.connect(self.select_button_clicked)
@@ -159,10 +164,12 @@ class Main_Window(QDialog):
         self.change_button_color(self.select_button,"yellow")
         return None
     
-    def scroll_to_message(self):
-        
-        self.scrollbar.setValue(self.scrollbar.maximum())
+    def auto_scroll(self):
+        scroll_timer = threading.Timer(1.0,self.scroll_to_message)
+        scroll_timer.start()
     
+    def scroll_to_message(self):
+        self.scrollbar.setValue(self.scrollbar.maximum())
     
     def create_message_tab(self, text, from_this_device=False):  # ? string ,bool<- -> none
         new_tab = QLabel(self.scrollArea)
@@ -172,9 +179,14 @@ class Main_Window(QDialog):
             f"background-color:{backgnd_color};font:{self.message_font_size}px Arial")
         new_tab.setFixedHeight(self.message_height)
         self.layout.addWidget(new_tab)
+        some_widget = self.layout.itemAt(self.widget_ind).widget()
+        some_widget.setStyleSheet("background-color:red")
+        self.widget_ind+=1
+        # childarr = self.scrollArea.children()
+        # for elem in childarr:
+        #     print(str(elem.setStyleSheet("background-color:red")))
         new_tab.show()
-        scroll_timer = threading.Timer(1.0,self.scroll_to_message)
-        scroll_timer.start()
+        self.auto_scroll()
         return
 
 

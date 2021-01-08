@@ -36,6 +36,7 @@ class Client:
             # status_checked is the main flag: None if we are in process, false if values have been obtained but gui hasn't
             # displayed info yet, true if gui has displayed the value 
         }
+        self.delivered_messages = []# texts of delivered messages 
 
     def start(self):
         if not self.test_mode:
