@@ -1,9 +1,8 @@
 import PyQt5
-from PyQt5.QtWidgets import QApplication, QTextBrowser, QWidget, QFrame
+from PyQt5.QtWidgets import QApplication,QFrame
 from PyQt5.QtWidgets import QDialog, QLabel, QGridLayout
 from PyQt5 import uic
 from PyQt5.QtCore import QTimer
-
 from PyQt5 import QtCore
 import sys
 import threading

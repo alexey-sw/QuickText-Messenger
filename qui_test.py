@@ -1,8 +1,3 @@
-import threading 
-
-def hello():
-    print('helo')
-    timer = threading.Timer(2.0,hello)
-    timer.start()
-timer = threading.Timer(2.0,hello)
-timer.start()
+arr = "[1,2,3]"
+array = list(arr)
+print(array)

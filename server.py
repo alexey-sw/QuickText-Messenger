@@ -4,10 +4,15 @@ import time
 import codecs
 from server_sender import Sender
 from server_parser import Parser
-
+from server_db import DB_Manager
+from queue import Queue
 #! server doesn't parse commands, they come clearly defined  with the message
+#TODO: implement multithreading with sqlite3
 
-
+# server adds sql command to db.sql_queue 
+# server sets flag 
+# db manager updates everything 
+# flag is set to false 
 class Server:
     def __init__(self):
         self.online_count = 0
@@ -22,11 +27,18 @@ class Server:
         self.connections = [["a"], ["b"], ["c"], ["d"], ["e"], ["f"]]
         self.status_commands = ["-delivery_confirmed:", "-d:"]
         self.delivery_queue = []  # * list of objects whose messages have to be delivered
-
+        self.sql_queue = Queue(100)
+        self.db = DB_Manager()
+        
     def get_time(self):  # ? ..<-   -> string
         return time.ctime()
 
-
+                
+    def add_to_sql_queue(self,instruction,argument):
+        self.db.sql_queue.put([instruction,argument])
+        self.db.flag.set()
+        return 
+              
     def disconnect_user(self, user_account):  # ? object<-  -> None
         for i in range(len(self.connections)):
             if self.connections[i][0] == user_account:
@@ -35,7 +47,7 @@ class Server:
 
                 break
         return
-
+    
     def execute_client_command(self, message):  # ? object<- -> None
         message_command = message["command"]
         recipient_account = message["to"]
@@ -64,8 +76,8 @@ class Server:
         elif message_command == "-delivery_confirmed:":
             sender.send_client_deliv_notif(message)
         elif message_command == "-check_status":
-            sender.send_account_status(message)
-            
+            self.add_to_sql_queue(self.db.get_tbl,"MAIN_TABLE")
+            sender.send_account_status(message)  
         return
 
     def check_if_connected(self, account_name):  # ? int<- -> bool
@@ -129,12 +141,8 @@ class Server:
         return indx
 
     def is_online(self, account_name):  # ? string<- -> bool
-        for elem in self.connections:
-            if elem[0] == account_name:
-                if len(elem) == 2:
-                    return True
-                else:
-                    return False
+        self.add_to_sql_queue(self.db.is_online,account_name)
+        return 
 
     # ? string<- ->array:[bool,string]
     def account_validity_check(self, account_name):
@@ -146,7 +154,7 @@ class Server:
                 return [True, ""]
         return [False, f"Account '{account_name}' doesn't exist"]
 
-    def is_existent(self, account_name):
+    def is_existent(self, account_name): #! delete check_if_connected function 
         account_names = list(map(lambda elem: elem[0], self.connections))
         if account_name in account_names:
             return True
@@ -177,34 +185,37 @@ class Server:
             self.send_unread_messages(unread_messages)
 
         while self.check_if_connected(account_name):
-            try:
-                msg_length = conn.recv(self.HEADERSIZE)
-            
-                msg_length = parser.format_message_length(msg_length, False)
-                message = conn.recv(msg_length)
+            msg_length = conn.recv(self.HEADERSIZE)
+        
+            msg_length = parser.format_message_length(msg_length, False)
+            message = conn.recv(msg_length)
 
-                unwrpt_message = parser.format_message(message, False)
-                print(unwrpt_message)
-                # need to rewrite it for failure_delivery
-                if unwrpt_message["command"] not in self.status_commands:
-                    sender.send_server_deliv_notif(unwrpt_message)
-                    print(unwrpt_message["command"])
-                self.execute_client_command(unwrpt_message)
-            except:
-                print(f"{account_name} disconnected from the server")
-                self.disconnect_user(account_name)
-                break
+            unwrpt_message = parser.format_message(message, False)
+            print(unwrpt_message)
+            # need to rewrite it for failure_delivery
+            if unwrpt_message["command"] not in self.status_commands:
+                sender.send_server_deliv_notif(unwrpt_message)
+                print(unwrpt_message["command"])
+            self.execute_client_command(unwrpt_message)
+            # except:
+            #     print(f"{account_name} disconnected from the server")
+            #     self.disconnect_user(account_name)
+            #     break
         return
 
-    def start(self):  # ? ..<-  -> None
-        self.sock.bind(self.ADDR)
-        self.sock.listen()
-        print(f"[Listening] Server is listening on {self.IP}")
+    def start_server_thread(self):
         while True:
             conn, addr = self.sock.accept()
-            thread = threading.Thread(
+            print(addr,"connected")
+            user_thread = threading.Thread(
                 target=self.handle_client, args=(conn, addr))
-            thread.start()
+            user_thread.start()
+            
+    def start(self):  # ? ..<-  -> None
+        self.sock.bind(self.ADDR)
+        self.sock.listen()      
+        server_thread = threading.Thread(target = self.start_server_thread)
+        server_thread.start()  
 
 
 parser = Parser()
