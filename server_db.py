@@ -80,7 +80,7 @@ class DB_Manager:
         return
 
     def is_existent(self, account_name):  # ? string<-- --> bool
-        cursor = self.connnection.cursor()
+        cursor = self.connection.cursor()
 
         value = cursor.execute(
             'SELECT is_online from MAIN_TABLE WHERE account_name==?', account_name)

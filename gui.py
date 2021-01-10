@@ -8,9 +8,8 @@ import sys
 import threading
 # todo: add select value 
 # todo: colorize messages that have been sent 
-class Gui():
-    valueUpdated = QtCore.pyqtSignal(int)
-    
+
+class Gui():    
     def __init__(self, window,client,message_arr):  # ? class, instance<- -> None
         self.window_class = window
         self.window = None
@@ -46,8 +45,9 @@ class Gui():
                 self.window.clear_field(self.window.account_field)
 
         elif is_checked ==True:
-            pass
-    
+            self.client.recipient_account_status["status_checked"] = False 
+            self.client.get_account_status(self.window.select_button_value)
+            
     def check_delivered_messages(self):
         pass
     
@@ -156,9 +156,10 @@ class Main_Window(QDialog):
         self.scrollArea.focusNextPrevChild(True)
         return None
 
-    def select_button_clicked(self):  # ? ..<- -> None 
+    def select_button_clicked(self,change_color = True):  # ? ..<- -> None 
         #! firstly we need to check in a local database, when in global(server database)
         recipient_account_value = self.account_select.text()
+        self.select_button_value = recipient_account_value
         self.client.get_account_status(recipient_account_value)
         self.change_button_color(self.select_button,"yellow")
         return None
