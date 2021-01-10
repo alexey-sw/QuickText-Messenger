@@ -9,6 +9,7 @@ from queue import Queue
 #! server doesn't parse commands, they come clearly defined  with the message
 #TODO: implement multithreading with sqlite3
 
+MAIN_TB = "MAIN_TABLE"
 # server adds sql command to db.sql_queue 
 # server sets flag 
 # db manager updates everything 
@@ -27,25 +28,18 @@ class Server:
         self.connections = [["a"], ["b"], ["c"], ["d"], ["e"], ["f"]]
         self.status_commands = ["-delivery_confirmed:", "-d:"]
         self.delivery_queue = []  # * list of objects whose messages have to be delivered
-        self.sql_queue = Queue(100)
         self.db = DB_Manager()
         
     def get_time(self):  # ? ..<-   -> string
         return time.ctime()
 
-                
-    def add_to_sql_queue(self,instruction,argument):
-        self.db.sql_queue.put([instruction,argument])
-        self.db.flag.set()
-        return 
-              
     def disconnect_user(self, user_account):  # ? object<-  -> None
         for i in range(len(self.connections)):
             if self.connections[i][0] == user_account:
                 print(f"'{user_account}' has been disconnected")
                 self.connections[i] = [user_account]
-
                 break
+        self.db.update_value(MAIN_TB,user_account,"is_online",0)
         return
     
     def execute_client_command(self, message):  # ? object<- -> None
@@ -76,7 +70,6 @@ class Server:
         elif message_command == "-delivery_confirmed:":
             sender.send_client_deliv_notif(message)
         elif message_command == "-check_status":
-            self.add_to_sql_queue(self.db.get_tbl,"MAIN_TABLE")
             sender.send_account_status(message)  
         return
 
@@ -131,8 +124,9 @@ class Server:
             
 
     # returns index of our user in array
-    def add_to_connections(self, indx, connection):  # ? int,arr<- ->None
+    def add_to_connections(self, indx, connection,account_name):  # ? int,arr<- ->None
         self.connections[indx].append(connection)
+        self.db.update_value(MAIN_TB,account_name,"is_online",1)
         return
 
     def get_client_index(self, account_name):  # ? string<- ->int
@@ -141,8 +135,9 @@ class Server:
         return indx
 
     def is_online(self, account_name):  # ? string<- -> bool
-        self.add_to_sql_queue(self.db.is_online,account_name)
-        return 
+        ans = self.db.is_online(account_name)
+        
+        return ans
 
     # ? string<- ->array:[bool,string]
     def account_validity_check(self, account_name):
@@ -155,11 +150,9 @@ class Server:
         return [False, f"Account '{account_name}' doesn't exist"]
 
     def is_existent(self, account_name): #! delete check_if_connected function 
-        account_names = list(map(lambda elem: elem[0], self.connections))
-        if account_name in account_names:
-            return True
-        else:
-            return False
+        ans = self.db.is_existent(account_name)
+        return ans 
+    
 
     def handle_client(self, conn, addr):  # ? arr,string<-  -> None
         self.online_count += 1
@@ -171,7 +164,7 @@ class Server:
                 # it is easier to operate with client index
                 client_index = self.get_client_index(account_name)
                 # that with our account name
-                self.add_to_connections(client_index, conn)
+                self.add_to_connections(client_index, conn,account_name)
                 print(f"{addr} has been connected as {account_name}")
                 sender.send_login_affirmation(account_name)
                 break
@@ -184,23 +177,24 @@ class Server:
             unread_messages = self.get_unread_messages(account_name)
             self.send_unread_messages(unread_messages)
 
-        while self.check_if_connected(account_name):
-            msg_length = conn.recv(self.HEADERSIZE)
-        
-            msg_length = parser.format_message_length(msg_length, False)
-            message = conn.recv(msg_length)
+        while True:
+            try:
+                msg_length = conn.recv(self.HEADERSIZE)
+            
+                msg_length = parser.format_message_length(msg_length, False)
+                message = conn.recv(msg_length)
 
-            unwrpt_message = parser.format_message(message, False)
-            print(unwrpt_message)
-            # need to rewrite it for failure_delivery
-            if unwrpt_message["command"] not in self.status_commands:
-                sender.send_server_deliv_notif(unwrpt_message)
-                print(unwrpt_message["command"])
-            self.execute_client_command(unwrpt_message)
-            # except:
-            #     print(f"{account_name} disconnected from the server")
-            #     self.disconnect_user(account_name)
-            #     break
+                unwrpt_message = parser.format_message(message, False)
+                print(unwrpt_message)
+                # need to rewrite it for failure_delivery
+                if unwrpt_message["command"] not in self.status_commands:
+                    sender.send_server_deliv_notif(unwrpt_message)
+                    print(unwrpt_message["command"])
+                self.execute_client_command(unwrpt_message)
+            except:
+                print(f"{account_name} disconnected from the server")
+                self.disconnect_user(account_name)
+                break
         return
 
     def start_server_thread(self):
@@ -213,9 +207,9 @@ class Server:
             
     def start(self):  # ? ..<-  -> None
         self.sock.bind(self.ADDR)
-        self.sock.listen()      
-        server_thread = threading.Thread(target = self.start_server_thread)
-        server_thread.start()  
+        self.sock.listen()
+        self.db.setup() 
+        self.start_server_thread()
 
 
 parser = Parser()

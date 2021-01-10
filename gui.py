@@ -178,9 +178,8 @@ class Main_Window(QDialog):
             f"background-color:{backgnd_color};font:{self.message_font_size}px Arial")
         new_tab.setFixedHeight(self.message_height)
         self.layout.addWidget(new_tab)
-        some_widget = self.layout.itemAt(self.widget_ind).widget()
-        some_widget.setStyleSheet("background-color:red")
-        self.widget_ind+=1
+        # some_widget = self.layout.itemAt(self.widget_ind).widget()
+        # self.widget_ind+=1
         # childarr = self.scrollArea.children()
         # for elem in childarr:
         #     print(str(elem.setStyleSheet("background-color:red")))

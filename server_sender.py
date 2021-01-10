@@ -31,7 +31,6 @@ class Sender:  # class is responsible for sending messages to other users
         msg_formatted = self.parser.format_message(msg,to_client = True)
         msg_len = len(msg_formatted)
         msg_len_formatted = self.parser.format_message_length(msg_len,to_client = True)
-        print("send_server_msg")
         self.send(msg_len_formatted,msg_formatted,recipient_account,is_account = True)
         return 
     
@@ -64,7 +63,6 @@ class Sender:  # class is responsible for sending messages to other users
         pass
     
     def send(self, msg_len_formatted, msg_formatted,addr, is_account): #? bytes, bytes, [string or arr], bool<- -> None
-        print("send funct")
         if is_account == True:
             connection = self.get_conn(addr) # if account is passed as a param
         else:  # for beginning we will just ignore that message hasn't been sent to user if its
