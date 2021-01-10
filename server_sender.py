@@ -129,7 +129,6 @@ class Sender:  # class is responsible for sending messages to other users
         account = message["text"]
         is_existent = self.server.is_existent(account)
         is_online = self.server.is_online(account) if is_existent else False
-        print(is_existent,is_online)
         message_obj = {
             "to":message["from"],
             "time":self.server.get_time(),

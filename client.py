@@ -67,18 +67,21 @@ class Client:
     def receive_data(self, socket):
         
         while True:
-            message_len = socket.recv(64)
-            formatted_msg_len = parser.format_message_length(
-                message_len, False)
-            message = socket.recv(formatted_msg_len)
-            decoded_message = parser.format_message(message, to_server=False)
-            is_server_message = self.is_from_server(decoded_message)
-            if is_server_message:  # we don't send notifications for server messages
-                self.execute_server_generated_commands(decoded_message)
-            else:
-                print(f"{decoded_message['text']} will be displayed")
-                self.messages_to_display.append(decoded_message["text"])
-                self.deliv_response(decoded_message)
+            try:
+                message_len = socket.recv(64)
+                formatted_msg_len = parser.format_message_length(
+                    message_len, False)
+                message = socket.recv(formatted_msg_len)
+                decoded_message = parser.format_message(message, to_server=False)
+                is_server_message = self.is_from_server(decoded_message)
+                if is_server_message:  # we don't send notifications for server messages
+                    self.execute_server_generated_commands(decoded_message)
+                else:
+                    print(f"{decoded_message['text']} will be displayed")
+                    self.messages_to_display.append(decoded_message["text"])
+                    self.deliv_response(decoded_message)
+            except:
+                self.exit_client()
 
     # one star near the message
     def execute_server_generated_commands(self, msg):  # ? obj<- -> None

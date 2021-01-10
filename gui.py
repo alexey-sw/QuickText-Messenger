@@ -36,10 +36,8 @@ class Gui():
             self.client.recipient_account_status["status_checked"]= True
             if is_existent==True:
                 self.window.change_button_color(self.window.select_button,"#00ff7f")
-                print("exists")
                 if is_online==True:
                     self.window.change_button_color(self.window.select_button,"#009900")
-                    print("online")
             else:
                 self.window.change_button_color(self.window.select_button,"red")
                 self.window.clear_field(self.window.account_field)

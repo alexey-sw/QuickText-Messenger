@@ -47,6 +47,12 @@ class DB_Manager:
         self.connection.commit()
         return
 
+    def get_unsent_messages(self,account_name):
+        cursor = self.connection.cursor()
+        arr = cursor.execute("SELECT * FROM UNREAD_MESSAGES WHERE recipient_account==?",account_name).fetchall()
+        arr = list(map(lambda elem:elem[1],arr))   
+        self.connection.commit()     
+        return arr
     # deletes all messages that were for some account
     def delete_unsent_messages(self, account_name):
         cursor = self.connection.cursor()
@@ -54,7 +60,8 @@ class DB_Manager:
         cursor.execute(
             "DELETE FROM UNREAD_MESSAGES WHERE recipient_account==?", (account_name))
         self.connection.commit()
-        self.get_tbl("UNREAD_MESSAGES")
+        # self.get_tbl("UNREAD_MESSAGES")
+        return 
 
     def test_fill(self):  # ? None <-- -->None
         cursor = self.connection.cursor()
@@ -70,7 +77,7 @@ class DB_Manager:
         for row in cursor.execute('''SELECT * FROM {}'''.format(table)):
             print(row)
         return
-
+        
     def update_value(self, table, account_name, column, value):  # ? None<-- -->None
         cursor = self.connection.cursor()
         cursor.execute(
@@ -81,9 +88,9 @@ class DB_Manager:
 
     def is_existent(self, account_name):  # ? string<-- --> bool
         cursor = self.connection.cursor()
-
         value = cursor.execute(
             'SELECT is_online from MAIN_TABLE WHERE account_name==?', account_name)
+        self.connection.commit()
         if value.arraysize:
             return True
         else:
@@ -91,10 +98,8 @@ class DB_Manager:
 
     def is_online(self, account_name):  # ? string<--  -->bool
         cursor = self.connection.cursor()
-        print("checking if online")
         for row in cursor.execute('SELECT is_online from MAIN_TABLE WHERE account_name==?', account_name):
             is_online = row[0]
-            print(is_online)
             if is_online:
                 return True
             else:
@@ -110,15 +115,16 @@ class DB_Manager:
 
 # manager = DB_Manager()
 # manager.setup()
-# thread = Thread(target=a)
-# thread.start()
+
 # accounts = "abcdef"
 # string = "slakdajsfdkjasdfljlasdfjlawjelkjds"
 # for i in range(100):
 #     manager.update_unsent_messages(string[0:randint(
 #         1, len(string)-2)], accounts[randint(0, len(accounts)-1)], "hello")
-# manager.delete_unsent_messages("d")
-# manager.get_tbl("UNREAD_MESSAGES")
+# print(manager.get_unsent_messages("a"))
+
+# print(manager.delete_unsent_messages("d"))
+# print(manager.get_unsent_messages("d"))
 
 
 #! MESSAGE DELETION WORKS PROPERLY
