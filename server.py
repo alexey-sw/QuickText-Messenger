@@ -8,13 +8,15 @@ from server_parser import Parser
 from server_db import DB_Manager
 from queue import Queue
 #! server doesn't parse commands, they come clearly defined  with the message
-#TODO: implement multithreading with sqlite3
+# TODO: implement multithreading with sqlite3
 
 MAIN_TB = "MAIN_TABLE"
-# server adds sql command to db.sql_queue 
-# server sets flag 
-# db manager updates everything 
-# flag is set to false 
+# server adds sql command to db.sql_queue
+# server sets flag
+# db manager updates everything
+# flag is set to false
+
+
 class Server:
     def __init__(self):
         self.online_count = 0
@@ -27,10 +29,11 @@ class Server:
         # matrix, each element of array contains 3 vals
         # ! server identifies users using accountname, connection info #! if len of element == 1 -> account is free for use
         self.connections = [["a"], ["b"], ["c"], ["d"], ["e"], ["f"]]
-        self.status_commands = ["-delivery_confirmed:", "-d:"]
+        self.status_commands = [
+            "-delivery_confirmed:", "-d:", "-check_status:"]
         self.delivery_queue = []  # * list of objects whose messages have to be delivered
         self.db = DB_Manager()
-        
+
     def get_time(self):  # ? ..<-   -> string
         return time.ctime()
 
@@ -40,33 +43,23 @@ class Server:
                 print(f"'{user_account}' has been disconnected")
                 self.connections[i] = [user_account]
                 break
-        self.db.update_value(MAIN_TB,user_account,"is_online",0)
+        self.db.update_value(MAIN_TB, user_account, "is_online", 0)
         return
-    
+
     def execute_client_command(self, message):  # ? object<- -> None
         message_command = message["command"]
         recipient_account = message["to"]
-        delay = message["delay"] # if we want to append to message queue later 
-        sender_account = message["from"]
         if message_command == "-s:":
             if self.is_existent(recipient_account):
-                # we only need message_command, functions work with message_obj
-                # if self.is_online(recipient_account):
-                #     sender.send_msg(message) #! if user is online delay is handled by sender class 
-                # else: #! otherwise it is handled by server method 
-                #     append_timer = threading.Timer(delay,self.update_deliv_queue,(message,))
-                #     append_timer.start()
-                sender.send_msg(message)    
-                    #! this will work out badly in case we have delay specified 
+                sender.send_msg(message)
             else:
-                sender.send_deliv_error(message) #! remove this shit 
-
+                sender.send_deliv_error(message)  # ! remove this shit
         elif message_command == "-info:":
             pass
         elif message_command == "-delivery_confirmed:":
             sender.send_client_deliv_notif(message)
-        elif message_command == "-check_status":
-            sender.send_account_status(message)  
+        elif message_command == "-check_status:":
+            sender.send_account_status(message)
         return
 
     def login_client(self, conn):  # ? arr<-  ->array: [string,bool,string ]
@@ -92,25 +85,22 @@ class Server:
         return
 
     def update_deliv_queue(self, message):  # ? bin<- -> return None
-        message = parser.format_message(message,to_client = False)#! converting from bin to json   
+        # ! converting from bin to json
+        message = parser.format_message(message, to_client=False)
         recipient_account = message["to"]
-            
+
         print("updating deliv queu ")
         date = message["time"]
         message = parser.object_to_json(message)
         print(type(message))
-        self.db.update_unsent_messages(message,recipient_account,date)
+        self.db.update_unsent_messages(message, recipient_account, date)
         self.db.get_tbl("UNREAD_MESSAGES")
-        
-            # self.delivery_queue.append([recipient_account, message])
-            #! rewrite with db 
-        return 
-            
+        return
 
     # returns index of our user in array
-    def add_to_connections(self, indx, connection,account_name):  # ? int,arr<- ->None
+    def add_to_connections(self, indx, connection, account_name):  # ? int,arr<- ->None
         self.connections[indx].append(connection)
-        self.db.update_value(MAIN_TB,account_name,"is_online",1)
+        self.db.update_value(MAIN_TB, account_name, "is_online", 1)
         return
 
     def get_client_index(self, account_name):  # ? string<- ->int
@@ -133,10 +123,10 @@ class Server:
                 return [True, ""]
         return [False, f"Account '{account_name}' doesn't exist"]
 
-    def is_existent(self, account_name): #! delete check_if_connected function 
+    def is_existent(self, account_name):  # ! delete check_if_connected function
         ans = self.db.is_existent(account_name)
-        return ans 
-    
+        return ans
+
     def handle_client(self, conn, addr):  # ? arr,string<-  -> None
         self.online_count += 1
         print(f"[New connection] {addr} connected")
@@ -147,7 +137,7 @@ class Server:
                 # it is easier to operate with client index
                 client_index = self.get_client_index(account_name)
                 # that with our account name
-                self.add_to_connections(client_index, conn,account_name)
+                self.add_to_connections(client_index, conn, account_name)
                 print(f"{addr} has been connected as {account_name}")
                 sender.send_login_affirmation(account_name)
                 break
@@ -155,43 +145,41 @@ class Server:
                 print(f"LoginProcessError: {error}")
                 sender.send_login_rejection(conn, error)
                 continue
-        
+
         unsent_messages = self.db.get_unsent_messages(account_name)
-        print("sending these messages: ",unsent_messages," to ",account_name)
+        print("sending these messages: ", unsent_messages, " to ", account_name)
         self.send_unread_messages(unsent_messages)
         self.db.delete_unsent_messages(account_name)
 
         while True:
             try:
-                
-                msg_length = conn.recv(self.HEADERSIZE)
-            
-                msg_length = parser.format_message_length(msg_length, False)
-                message = conn.recv(msg_length)
 
-                unwrpt_message = parser.format_message(message, False)
-               
-                if unwrpt_message["command"] not in self.status_commands:
-                    sender.send_server_deliv_notif(unwrpt_message)
-                self.execute_client_command(unwrpt_message)
+                msg_length = conn.recv(self.HEADERSIZE)
             except:
-                print(account_name,"disconnected")
+                print(account_name, "disconnected")
                 self.disconnect_user(account_name)
                 break
-        return 
-            
+            msg_length = parser.format_message_length(msg_length, False)
+            message = conn.recv(msg_length)
+
+            unwrpt_message = parser.format_message(message, False)
+
+            if unwrpt_message["command"] not in self.status_commands:
+                sender.send_server_deliv_notif(unwrpt_message)
+            self.execute_client_command(unwrpt_message)
+
     def start_server_thread(self):
         while True:
             conn, addr = self.sock.accept()
-            print(addr,"connected")
+            print(addr, "connected")
             user_thread = threading.Thread(
                 target=self.handle_client, args=(conn, addr))
             user_thread.start()
-            
+
     def start(self):  # ? ..<-  -> None
         self.sock.bind(self.ADDR)
         self.sock.listen()
-        self.db.setup() 
+        self.db.setup()
         self.start_server_thread()
 
 

@@ -85,7 +85,8 @@ class DB_Manager:
         self.connection.commit()
         self.get_tbl("MAIN_TABLE")
         return
-
+    #!sqlite3.ProgrammingError:
+    #!Incorrect number of bindings supplied. The current statement uses 1, and there are 2 supplied.
     def is_existent(self, account_name):  # ? string<-- --> bool
         cursor = self.connection.cursor()
         value = cursor.execute(

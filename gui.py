@@ -2,7 +2,7 @@ import PyQt5
 from PyQt5.QtWidgets import QApplication,QFrame
 from PyQt5.QtWidgets import QDialog, QLabel, QGridLayout
 from PyQt5 import uic
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QSaveFile, QTimer, qInstallMessageHandler
 from PyQt5 import QtCore
 import sys
 import threading
@@ -64,7 +64,10 @@ class Gui():
                 self.window.create_message_tab(new_message,from_this_device = False)
             self.messages_to_display.clear()
         self.check_status()
-            
+
+    def highlight_message(self,id):
+        self.window.highlight_message_tab(id)
+        pass
             
       
 
@@ -93,11 +96,21 @@ class Main_Window(QDialog):
         self.message_font_size = 14 
         
         self.select_button_value = ""
-        self.widget_ind=0
+        self.last_msg_ind=0 # is for current chat 
 
+    def setup_widgets(self):  # ? ..<- -> None
+        self.send_button.clicked.connect(self.send_button_clicked)
+        self.select_button.clicked.connect(self.select_button_clicked)
+        self.scrollArea.setWidgetResizable(True)
+        self.widget.setLayout(self.layout)
+        self.scrollArea.setWidget(self.widget)
+        self.scrollArea.focusNextPrevChild(True)
+        return None
+    
     def closeEvent(self, *args, **kwargs): # ? None <-- --> None 
         print("hello world ")
         self.client.exit_client()
+        return None 
 
     def get_delay(self):  # ? ...<- -> array of int
         delay_obj = self.timer.dateTime()
@@ -119,14 +132,14 @@ class Main_Window(QDialog):
         
         recipient_account = self.get_account_val()
         if recipient_account:
-            
-        # does exist? 
             text = self.get_message_text()
+            print(text)
             if text:
                 self.clear_field(self.message_field)
                 delay = self.get_delay()[0]  # gets only hours
-                self.create_message_tab(text,from_this_device=True)
+                
                 message = self.compose_message(recipient_account,text,delay)
+                self.create_message_tab(text,from_this_device=True)
                 self.client.send_message_obj(message)
             else:
                 pass
@@ -134,11 +147,11 @@ class Main_Window(QDialog):
     
     def clear_field(self,field):#? object inst<-- --> None 
         field.clear()
-        return 
+        return None 
     
-    def get_account_val(self):
-        value = self.client.recipient_account_status["account"]
-        return value 
+    def get_account_val(self):#? ()->  
+        recipient_account = self.client.recipient_account_status["account"]
+        return recipient_account
     
     def compose_message(self,account,text,delay):  #? string, int (arr in future ) <-- --> dict 
         msg = {
@@ -147,18 +160,12 @@ class Main_Window(QDialog):
             "delay":delay,
             "text":text,
             "command":"-s:",
-            "time":self.client.get_time()
+            "time":self.client.get_time(),
+            "id":self.last_msg_ind
         }
         return msg 
     
-    def setup_widgets(self):  # ? ..<- -> None
-        self.send_button.clicked.connect(self.send_button_clicked)
-        self.select_button.clicked.connect(self.select_button_clicked)
-        self.scrollArea.setWidgetResizable(True)
-        self.widget.setLayout(self.layout)
-        self.scrollArea.setWidget(self.widget)
-        self.scrollArea.focusNextPrevChild(True)
-        return None
+   
 
     def select_button_clicked(self,change_color = True):  # ? ..<- -> None 
         #! firstly we need to check in a local database, when in global(server database)
@@ -171,11 +178,14 @@ class Main_Window(QDialog):
     def auto_scroll(self):
         scroll_timer = threading.Timer(1.0,self.scroll_to_message)
         scroll_timer.start()
-    
+        return None 
+        
     def scroll_to_message(self):
         self.scrollbar.setValue(self.scrollbar.maximum())
+        return None 
     
     def create_message_tab(self, text, from_this_device=False):  # ? string ,bool<- -> none
+        self.last_msg_ind+=1
         new_tab = QLabel(self.scrollArea)
         backgnd_color = "#a3ffdc" if not(from_this_device) else "#a2f481"
         new_tab.setText(text)
@@ -190,7 +200,19 @@ class Main_Window(QDialog):
         #     print(str(elem.setStyleSheet("background-color:red")))
         new_tab.show()
         self.auto_scroll()
-        return
-
+        # if self.last_msg_ind ==2:
+        #     self.remove_message_tabs()
+        return None 
+    
+    def remove_message_tabs(self):#? () -> None 
+        widget_arr = self.scrollArea.children()
+        for i in range(len(widget_arr)):
+            self.scrollArea.takeWidget()
+        return None 
+    
+    def highlight_message_tab(self,ind):
+        message_widget = self.layout.itemAtPosition(ind,0).widget()
+        message_widget.setStyleSheet("background-color:red")
+        return None 
 
 
