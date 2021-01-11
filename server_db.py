@@ -90,7 +90,7 @@ class DB_Manager:
     def is_existent(self, account_name):  # ? string<-- --> bool
         cursor = self.connection.cursor()
         value = cursor.execute(
-            'SELECT is_online from MAIN_TABLE WHERE account_name==?', account_name)
+            'SELECT is_online from MAIN_TABLE WHERE account_name==?', (account_name,))
         self.connection.commit()
         if value.fetchall() == []:
             return False
@@ -114,18 +114,19 @@ class DB_Manager:
 #     print(manager.is_online("a"))
 
 
-# manager = DB_Manager()
-# manager.setup()
+manager = DB_Manager()
+manager.setup()
 
-# accounts = "abcdef"
-# string = "slakdajsfdkjasdfljlasdfjlawjelkjds"
-# for i in range(100):
-#     manager.update_unsent_messages(string[0:randint(
-#         1, len(string)-2)], accounts[randint(0, len(accounts)-1)], "hello")
-# print(manager.get_unsent_messages("a"))
-# print(manager.is_existent("ф"),"is existent")
-# print(manager.delete_unsent_messages("d"))
-# print(manager.get_unsent_messages("d"))
+accounts = "abcdef"
+string = "slakdajsfdkjasdfljlasdfjlawjelkjds"
+for i in range(100):
+    manager.update_unsent_messages(string[0:randint(
+        1, len(string)-2)], accounts[randint(0, len(accounts)-1)], "hello")
+print(manager.get_unsent_messages("a"))
+print(manager.is_existent("asdfasdfas"),"is existent")
+
+print(manager.delete_unsent_messages("d"))
+print(manager.get_unsent_messages("d"))
 
 
 #! MESSAGE DELETION WORKS PROPERLY
