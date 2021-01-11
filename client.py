@@ -98,10 +98,10 @@ class Client:
             message_id = msg["id"]
             if command == "-usr_deliv_success:":
                 print(f"user delivery confirmed of message with {message_id} id ")
-                self.gui.highlight_message(message_id)
+                self.gui.highlight_message(message_id,first_star = False)
             else:
                 print(f"server delivery confirmed of message with {message_id} id ")
-                
+                self.gui.highlight_message(message_id,first_star=True)
         elif command == "-account_status:":
             print(msg)
             self.update_recipient_account_status(msg)
@@ -180,7 +180,6 @@ class Client:
                 print("ServerError: try again later")
         else:
             print(msg)
-
         return None
 
     def send_deliv_response(self, msg):  # ? object <- -> None

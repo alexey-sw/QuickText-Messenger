@@ -65,8 +65,8 @@ class Gui():
             self.messages_to_display.clear()
         self.check_status()
 
-    def highlight_message(self,id):
-        self.window.highlight_message_tab(id)
+    def highlight_message(self,id,first_star):
+        self.window.highlight_message_tab(id,first_star)
         pass
             
       
@@ -187,7 +187,7 @@ class Main_Window(QDialog):
     def create_message_tab(self, text, from_this_device=False):  # ? string ,bool<- -> none
         self.last_msg_ind+=1
         new_tab = QLabel(self.scrollArea)
-        backgnd_color = "#a3ffdc" if not(from_this_device) else "#a2f481"
+        backgnd_color = "#00FF00" if not(from_this_device) else "#00FFFF"
         new_tab.setText(text)
         new_tab.setStyleSheet(
             f"background-color:{backgnd_color};font:{self.message_font_size}px Arial")
@@ -210,9 +210,10 @@ class Main_Window(QDialog):
             self.scrollArea.takeWidget()
         return None 
     
-    def highlight_message_tab(self,ind):
+    def highlight_message_tab(self,ind,first_star = True):
         message_widget = self.layout.itemAtPosition(ind,0).widget()
-        message_widget.setStyleSheet("background-color:red")
+        new_color = "#0000FF" if first_star else "#000080"
+        message_widget.setStyleSheet(f"background-color:{new_color}")
         return None 
 
 

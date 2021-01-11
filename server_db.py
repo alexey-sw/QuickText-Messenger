@@ -114,19 +114,19 @@ class DB_Manager:
 #     print(manager.is_online("a"))
 
 
-manager = DB_Manager()
-manager.setup()
+# manager = DB_Manager()
+# manager.setup()
 
-accounts = "abcdef"
-string = "slakdajsfdkjasdfljlasdfjlawjelkjds"
-for i in range(100):
-    manager.update_unsent_messages(string[0:randint(
-        1, len(string)-2)], accounts[randint(0, len(accounts)-1)], "hello")
-print(manager.get_unsent_messages("a"))
-print(manager.is_existent("asdfasdfas"),"is existent")
+# accounts = "abcdef"
+# string = "slakdajsfdkjasdfljlasdfjlawjelkjds"
+# for i in range(100):
+#     manager.update_unsent_messages(string[0:randint(
+#         1, len(string)-2)], accounts[randint(0, len(accounts)-1)], "hello")
+# print(manager.get_unsent_messages("a"))
+# print(manager.is_existent("asdfasdfas"),"is existent")
 
-print(manager.delete_unsent_messages("d"))
-print(manager.get_unsent_messages("d"))
+# print(manager.delete_unsent_messages("d"))
+# print(manager.get_unsent_messages("d"))
 
 
 #! MESSAGE DELETION WORKS PROPERLY
