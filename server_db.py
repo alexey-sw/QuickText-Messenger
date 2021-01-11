@@ -91,10 +91,10 @@ class DB_Manager:
         value = cursor.execute(
             'SELECT is_online from MAIN_TABLE WHERE account_name==?', account_name)
         self.connection.commit()
-        if value.arraysize:
-            return True
-        else:
+        if value.fetchall() == []:
             return False
+        else:
+            return True 
 
     def is_online(self, account_name):  # ? string<--  -->bool
         cursor = self.connection.cursor()
@@ -122,7 +122,7 @@ class DB_Manager:
 #     manager.update_unsent_messages(string[0:randint(
 #         1, len(string)-2)], accounts[randint(0, len(accounts)-1)], "hello")
 # print(manager.get_unsent_messages("a"))
-
+# print(manager.is_existent("ф"),"is existent")
 # print(manager.delete_unsent_messages("d"))
 # print(manager.get_unsent_messages("d"))
 

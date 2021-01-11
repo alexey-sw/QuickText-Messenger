@@ -6,7 +6,7 @@ from PyQt5.QtCore import QTimer
 from PyQt5 import QtCore
 import sys
 import threading
-# todo: add select value 
+# todo: add user db 
 # todo: colorize messages that have been sent 
 
 class Gui():    
@@ -16,6 +16,7 @@ class Gui():
         self.client = client 
         self.messages_to_display = message_arr 
         self.timer =QTimer()
+        self.to_check_status = False 
 
     def start(self):
         self.setup_qtimer()
@@ -43,24 +44,26 @@ class Gui():
                 self.window.clear_field(self.window.account_field)
 
         elif is_checked ==True:
-            self.client.recipient_account_status["status_checked"] = False 
-            self.client.get_account_status(self.window.select_button_value)
+            if self.to_check_status:
+                self.client.recipient_account_status["status_checked"] = False 
+                self.client.get_account_status(self.window.select_button_value)
+            else:
+                pass
+        return 
             
-    def check_delivered_messages(self):
-        pass
     
     def setup_qtimer(self):#? None < -- --> None 
         self.timer.setInterval(1000)# check message and status 
         self.timer.timeout.connect(self.check_messages)
     
     def check_messages(self): #? None < -- --> None 
+        #! rewrite
         if self.messages_to_display!=[]:
             for i in range(len(self.messages_to_display)):
                 new_message = self.messages_to_display[i]
                 self.window.create_message_tab(new_message,from_this_device = False)
             self.messages_to_display.clear()
         self.check_status()
-        self.check_delivered_messages()
             
             
       
@@ -119,11 +122,14 @@ class Main_Window(QDialog):
             
         # does exist? 
             text = self.get_message_text()
-            self.clear_field(self.message_field)
-            delay = self.get_delay()[0]  # gets only hours
-            self.create_message_tab(text,from_this_device=True)
-            message = self.compose_message(recipient_account,text,delay)
-            self.client.send_message_obj(message)
+            if text:
+                self.clear_field(self.message_field)
+                delay = self.get_delay()[0]  # gets only hours
+                self.create_message_tab(text,from_this_device=True)
+                message = self.compose_message(recipient_account,text,delay)
+                self.client.send_message_obj(message)
+            else:
+                pass
             return None 
     
     def clear_field(self,field):#? object inst<-- --> None 

@@ -64,7 +64,11 @@ class Sender:  # class is responsible for sending messages to other users
     
     def send(self, msg_len_formatted, msg_formatted,addr, is_account): #? bytes, bytes, [string or arr], bool<- -> None
         if is_account == True:
-            connection = self.get_conn(addr) # if account is passed as a param
+            if self.server.is_online(addr):
+                connection = self.get_conn(addr) # if account is passed as a param
+            else:
+                self.server.update_deliv_queue(msg_formatted)
+                return 
         else:  # for beginning we will just ignore that message hasn't been sent to user if its
             # if connection is already in params 
             connection = addr

@@ -51,22 +51,18 @@ class Server:
         if message_command == "-s:":
             if self.is_existent(recipient_account):
                 # we only need message_command, functions work with message_obj
-                if self.is_online(recipient_account):
-                    sender.send_msg(message) #! if user is online delay is handled by sender class 
-                else: #! otherwise it is handled by server method 
-                    append_timer = threading.Timer(delay,self.update_deliv_queue,(message,))
-                    append_timer.start()
-                    
+                # if self.is_online(recipient_account):
+                #     sender.send_msg(message) #! if user is online delay is handled by sender class 
+                # else: #! otherwise it is handled by server method 
+                #     append_timer = threading.Timer(delay,self.update_deliv_queue,(message,))
+                #     append_timer.start()
+                sender.send_msg(message)    
                     #! this will work out badly in case we have delay specified 
             else:
                 sender.send_deliv_error(message) #! remove this shit 
 
         elif message_command == "-info:":
             pass
-
-        elif message_command == "-d:":
-            self.disconnect_user(sender_account)
-
         elif message_command == "-delivery_confirmed:":
             sender.send_client_deliv_notif(message)
         elif message_command == "-check_status":
@@ -95,20 +91,17 @@ class Server:
             pass
         return
 
-    def update_deliv_queue(self, message):  # ? obj<- -> return None
+    def update_deliv_queue(self, message):  # ? bin<- -> return None
+        message = parser.format_message(message,to_client = False)#! converting from bin to json   
         recipient_account = message["to"]
-        if self.is_online(recipient_account):
-            message["delay"] = 0
-            sender.send_msg(message)
             
-        else:
-            print("updating deliv queu ")
-            date = message["time"]
-            message = parser.object_to_json(message)
-            print(type(message))
-            self.db.update_unsent_messages(message,recipient_account,date)
-            self.db.get_tbl("UNREAD_MESSAGES")
-            
+        print("updating deliv queu ")
+        date = message["time"]
+        message = parser.object_to_json(message)
+        print(type(message))
+        self.db.update_unsent_messages(message,recipient_account,date)
+        self.db.get_tbl("UNREAD_MESSAGES")
+        
             # self.delivery_queue.append([recipient_account, message])
             #! rewrite with db 
         return 
@@ -177,11 +170,9 @@ class Server:
                 message = conn.recv(msg_length)
 
                 unwrpt_message = parser.format_message(message, False)
-                # print(unwrpt_message)
-                # need to rewrite it for failure_delivery
+               
                 if unwrpt_message["command"] not in self.status_commands:
                     sender.send_server_deliv_notif(unwrpt_message)
-                    # print(unwrpt_message["command"])
                 self.execute_client_command(unwrpt_message)
             except:
                 print(account_name,"disconnected")
