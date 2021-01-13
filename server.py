@@ -21,11 +21,11 @@ class Server:
         self.ADDR = (self.IP, self.PORT)
         self.encoding = "utf-8"
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connections = [["a"], ["b"], ["c"], ["d"], ["e"], ["f"]]
         self.status_commands = [
             "-delivery_confirmed:", "-d:", "-check_status:"]
         self.delivery_queue = []  # * list of objects whose messages have to be delivered
         self.db = DB_Manager()
+        self.connections = []
 
     def get_time(self):  # ? ..<-   -> string
         return time.ctime()
@@ -88,16 +88,15 @@ class Server:
         # ! converting from bin to json
         message = parser.format_message(message, to_client=False)
         recipient_account = message["to"]
-
-        print("updating deliv queu ")
+        print("updating deliv queue")
         date = message["time"]
         message = parser.object_to_json(message)
         self.db.update_unsent_messages(message, recipient_account, date)
         return None 
 
     # returns index of our user in array
-    def add_to_connections(self, indx, connection, account_name):  # ? int,arr<- ->None
-        self.connections[indx].append(connection)
+    def add_to_connections(self,connection, account_name):  #? (obj,string)->None
+        self.connections.append([account_name,connection])
         self.db.update_value(MAIN_TB, account_name, "is_online", 1)
         return None
 
@@ -113,8 +112,8 @@ class Server:
     # ? string<- ->array:[bool,string]
     def account_validity_check(self, account_name):
         if self.is_existent(account_name):
-            indx = self.get_client_index(account_name)
-            if len(self.connections[indx]) != 1:
+            # indx = self.get_client_index(account_name)
+            if self.is_online(account_name):
                 return [False, f"Account '{account_name}' is already in use"]
             else:
                 return [True, ""]
@@ -132,10 +131,11 @@ class Server:
                 conn)  # error is "" if login was successful
             if is_valid:
                 # it is easier to operate with client index
-                client_index = self.get_client_index(account_name)
+                # client_index = self.get_client_index(account_name)
                 # that with our account name
-                self.add_to_connections(client_index, conn, account_name)
+                # self.add_to_connections(client_index, conn, account_name)
                 print(f"{addr} has been connected as {account_name}")
+                self.add_to_connections(conn,account_name)
                 sender.send_login_affirmation(account_name)
                 break
             else:
