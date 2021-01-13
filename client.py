@@ -69,21 +69,23 @@ class Client:
         while True:
             try:
                 message_len = socket.recv(64)
-                formatted_msg_len = parser.format_message_length(
-                    message_len, False)
-                message = socket.recv(formatted_msg_len)
-                decoded_message = parser.format_message(
-                    message, to_server=False)
-                is_server_message = self.is_from_server(decoded_message)
-                if is_server_message:  # we don't send notifications for server messages
-                    self.execute_server_generated_commands(decoded_message)
-                else:
-                    print(f"{decoded_message['text']} will be displayed")
-                    self.messages_to_display.append(decoded_message["text"])
-                    self.deliv_response(decoded_message)
             except:
+                print("client error")
                 self.exit_client()
 
+            formatted_msg_len = parser.format_message_length(
+                message_len, False)
+            message = socket.recv(formatted_msg_len)
+            decoded_message = parser.format_message(
+                message, to_server=False)
+            is_server_message = self.is_from_server(decoded_message)
+            if is_server_message:  # we don't send notifications for server messages
+                self.execute_server_generated_commands(decoded_message)
+            else:
+                print(f"{decoded_message['text']} will be displayed")
+                self.messages_to_display.append(decoded_message["text"])
+                self.deliv_response(decoded_message)
+            
     # one star near the message
     def execute_server_generated_commands(self, msg):  # ? obj<- -> None
         command = msg["command"]
@@ -151,6 +153,7 @@ class Client:
         return
 
     def send_message_obj(self, message):  # ? obj<- -> None
+        print("sending message:",message)
         formatted_msg = parser.format_message(message, to_server=True)
         msg_len = len(formatted_msg)
         formatted_msg_len = parser.format_message_length(

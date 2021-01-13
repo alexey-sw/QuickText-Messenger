@@ -36,11 +36,11 @@ class Gui():
             
             self.client.recipient_account_status["status_checked"]= True
             if is_existent==True:
-                self.window.change_button_color(self.window.select_button,"#00ff7f")
+                self.window.change_button_color(self.window.select_button,self.window.offline_button_color)
                 if is_online==True:
-                    self.window.change_button_color(self.window.select_button,"#009900")
+                    self.window.change_button_color(self.window.select_button,self.window.online_button_color)
             else:
-                self.window.change_button_color(self.window.select_button,"red")
+                self.window.change_button_color(self.window.select_button,self.window.error_button_color)
                 self.window.clear_field(self.window.account_field)
 
         elif is_checked ==True:
@@ -92,8 +92,16 @@ class Main_Window(QDialog):
         self.message_field = self.message_edit  # message text input
         self.account_field = self.account_select
         
+        #* font styles 
         self.message_height = 30# height in px
-        self.message_font_size = 14 
+        self.message_font_size = 20
+        self.message_font_color = "white" 
+        
+        # *select button styles 
+        self.processing_button_color = "yellow"
+        self.error_button_color = "red"
+        self.offline_button_color = "#00ff7f"
+        self.online_button_color = "#009900"
         
         self.select_button_value = ""
         self.last_msg_ind=0 # is for current chat 
@@ -167,7 +175,7 @@ class Main_Window(QDialog):
     
    
 
-    def select_button_clicked(self,change_color = True):  # ? ..<- -> None 
+    def select_button_clicked(self):  # ? ..<- -> None 
         #! firstly we need to check in a local database, when in global(server database)
         recipient_account_value = self.account_select.text()
         self.select_button_value = recipient_account_value
