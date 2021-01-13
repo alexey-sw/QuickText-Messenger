@@ -5,7 +5,7 @@ from threading import Event, Thread
 # TODO : INTEGRATE SERVER WITH A DATABASE
 
 alph = "abcdef"
-
+MAIN_TB = "MAIN_TABLE"
 
 class DB_Manager:
     def __init__(self):
@@ -96,6 +96,14 @@ class DB_Manager:
         else:
             return True 
 
+    def disconnect_user(self,account_name):#?(string)->None
+        self.update_value(MAIN_TB, account_name, "is_online", 0)
+        return None 
+    
+    def connect_user(self,account_name):
+        self.update_value(MAIN_TB, account_name, "is_online", 1)
+        return None 
+    
     def is_online(self, account_name):  # ? string<--  -->bool
         cursor = self.connection.cursor()
         for row in cursor.execute('SELECT is_online from MAIN_TABLE WHERE account_name==?', account_name):
@@ -106,11 +114,6 @@ class DB_Manager:
                 return False
         self.connection.commit()
         del cursor
-
-
-# def a():
-#     print("here")
-#     print(manager.is_online("a"))
 
 
 # manager = DB_Manager()

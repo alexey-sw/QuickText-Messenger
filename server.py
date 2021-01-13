@@ -10,8 +10,6 @@ from queue import Queue
 #! server doesn't parse commands, they come clearly defined  with the message
 # TODO: implement multithreading with sqlite3
 
-MAIN_TB = "MAIN_TABLE"
-
 class Server:
     def __init__(self):
         self.online_count = 0
@@ -25,7 +23,7 @@ class Server:
             "-delivery_confirmed:", "-d:", "-check_status:"]
         self.delivery_queue = []  # * list of objects whose messages have to be delivered
         self.db = DB_Manager()
-        self.connections = []
+        self.connections = [] # only currently available users
 
     def get_time(self):  # ? ..<-   -> string
         return time.ctime()
@@ -33,10 +31,10 @@ class Server:
     def disconnect_user(self, user_account):  # ? object<-  -> None
         for i in range(len(self.connections)):
             if self.connections[i][0] == user_account:
-                print(f"'{user_account}' has been disconnected")
-                self.connections[i] = [user_account]
+                del self.connections[i]
                 break
-        self.db.update_value(MAIN_TB, user_account, "is_online", 0)
+        self.db.disconnect_user(user_account)
+        # self.db.update_value(MAIN_TB, user_account, "is_online", 0)
         return None 
 
     def execute_client_command(self, message):  # ? object<- -> None
@@ -63,7 +61,6 @@ class Server:
         formatted_login_message = parser.format_message(login_message, False)
         account_name = formatted_login_message["text"]
         is_valid, error = self.account_validity_check(account_name)
-
         return [account_name, is_valid, error]
 
     def send_unread_messages(self, message_arr):  # ? arr of string  <- -> None
@@ -97,7 +94,8 @@ class Server:
     # returns index of our user in array
     def add_to_connections(self,connection, account_name):  #? (obj,string)->None
         self.connections.append([account_name,connection])
-        self.db.update_value(MAIN_TB, account_name, "is_online", 1)
+        self.db.connect_user(account_name)
+        # # self.db.update_value(MAIN_TB, account_name, "is_online", 1)
         return None
 
     def get_client_index(self, account_name):  # ? string<- ->int
@@ -130,10 +128,6 @@ class Server:
             account_name, is_valid, error = self.login_client(
                 conn)  # error is "" if login was successful
             if is_valid:
-                # it is easier to operate with client index
-                # client_index = self.get_client_index(account_name)
-                # that with our account name
-                # self.add_to_connections(client_index, conn, account_name)
                 print(f"{addr} has been connected as {account_name}")
                 self.add_to_connections(conn,account_name)
                 sender.send_login_affirmation(account_name)
