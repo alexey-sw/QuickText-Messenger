@@ -1,3 +1,4 @@
-arr = "[1,2,3]"
-array = list(arr)
-print(array)
+from time import ctime
+
+current_time = ctime()
+print(type(current_time))

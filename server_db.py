@@ -83,7 +83,6 @@ class DB_Manager:
         cursor.execute(
             'UPDATE {} SET {}={} WHERE account_name==?'.format(table, column, value), account_name)
         self.connection.commit()
-        self.get_tbl("MAIN_TABLE")
         return
     #!sqlite3.ProgrammingError:
     #!Incorrect number of bindings supplied. The current statement uses 1, and there are 2 supplied.

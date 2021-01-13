@@ -37,7 +37,7 @@ class Client:
         }
         self.delivered_messages = []  # texts of delivered messages
 
-    def start(self):
+    def start(self):#? ()->None 
         if not self.test_mode:
             try:
                 self.sock.connect(self.SERVERADDR)
@@ -53,25 +53,24 @@ class Client:
                 self.gui = Gui(Main_Window, self, self.messages_to_display)
                 self.gui.start()
 
-    def get_time(self):
+    def get_time(self):#? ()->string 
         return time.ctime()
 
-    def exit_client(self):
+    def exit_client(self):#? ()->string 
         os._exit(0)
 
-    def is_from_server(self, msg):
+    def is_from_server(self, msg):#? (dict)->bool 
         if msg["from"] == "SERVER":
             return True
         return False
 
-    def receive_data(self, socket):
-
+    def receive_data(self, socket):#? (obj)->None 
         while True:
             try:
                 message_len = socket.recv(64)
             except:
                 print("client error")
-                self.exit_client()
+                break
 
             formatted_msg_len = parser.format_message_length(
                 message_len, False)
@@ -85,9 +84,9 @@ class Client:
                 print(f"{decoded_message['text']} will be displayed")
                 self.messages_to_display.append(decoded_message["text"])
                 self.deliv_response(decoded_message)
-            
-    # one star near the message
-    def execute_server_generated_commands(self, msg):  # ? obj<- -> None
+        self.exit_client()
+
+    def execute_server_generated_commands(self, msg):  # ? (obj)->None
         command = msg["command"]
         error = msg["error"]
         if error:
@@ -105,11 +104,10 @@ class Client:
                 print(f"server delivery confirmed of message with {message_id} id ")
                 self.gui.highlight_message(message_id,first_star=True)
         elif command == "-account_status:":
-            print(msg)
             self.update_recipient_account_status(msg)
-        return
+        return None
 
-    def deliv_response(self, message):  # ? obj<- -> None
+    def deliv_response(self, message):  # ? (obj)->None
         sender = message["from"]
         message_id = message["id"]
         response_message = {
@@ -122,9 +120,9 @@ class Client:
             "id": message_id
         }
         self.send_deliv_response(response_message)
-        return
+        return None 
 
-    def login_process(self, socket):  # ? -> None
+    def login_process(self, socket):  # ?(obj) -> None
         while not self.logged_in:
             account_name = input("Type name of your account: ")
             login_message_obj = {"text": account_name,  # ! if account_name is disconnect -> disconnect
@@ -140,7 +138,7 @@ class Client:
             socket.send(message_len_formatted)
             socket.send(login_message_formatted)
             self.receive_login_response(socket)
-        return
+        return None 
         # add field for password
 
     def receive_login_response(self, socket):
@@ -150,17 +148,16 @@ class Client:
         message = socket.recv(formatted_msg_len)
         decoded_message = parser.format_message(message, to_server=False)
         self.execute_server_generated_commands(decoded_message)
-        return
+        return None 
 
     def send_message_obj(self, message):  # ? obj<- -> None
-        print("sending message:",message)
         formatted_msg = parser.format_message(message, to_server=True)
         msg_len = len(formatted_msg)
         formatted_msg_len = parser.format_message_length(
             msg_len, to_server=True)
         self.send_bytes(formatted_msg_len)
         self.send_bytes(formatted_msg)
-        return
+        return None 
 
     def get_account_status(self, account):
         self.recipient_account_status["account"] = account
@@ -174,7 +171,8 @@ class Client:
             "command": "-check_status:"
         }
         self.send_message_obj(message_obj)
-
+        return None 
+    
     def send_bytes(self, msg):  # ? bytes socket<-  -> None
         if not self.test_mode:
             try:
@@ -191,7 +189,7 @@ class Client:
             len(msg_formatted), to_server=True)
         self.sock.send(msg_len_formatted)
         self.sock.send(msg_formatted)
-        return
+        return None 
 
     def update_recipient_account_status(self, message):
         self.recipient_account_status["is_existent"] = message["is_existent"]
@@ -199,7 +197,7 @@ class Client:
         if not message["is_existent"]:
             self.recipient_account_status["is_existent"] = None
         self.recipient_account_status["status_checked"] = False
-        return
+        return None 
 
 
 parser = Parser()

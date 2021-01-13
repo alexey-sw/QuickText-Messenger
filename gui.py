@@ -16,7 +16,7 @@ class Gui():
         self.client = client 
         self.messages_to_display = message_arr 
         self.timer =QTimer()
-        self.to_check_status = False 
+        self.to_check_status = True  
 
     def start(self):
         self.setup_qtimer()
@@ -92,8 +92,8 @@ class Main_Window(QDialog):
         self.message_field = self.message_edit  # message text input
         self.account_field = self.account_select
         
-        #* font styles 
-        self.message_height = 30# height in px
+        #! font styles don't work, need to use Qfont object! 
+        self.message_height = 50# height in px
         self.message_font_size = 20
         self.message_font_color = "white" 
         
@@ -198,18 +198,11 @@ class Main_Window(QDialog):
         backgnd_color = "#00FF00" if not(from_this_device) else "#00FFFF"
         new_tab.setText(text)
         new_tab.setStyleSheet(
-            f"background-color:{backgnd_color};font:{self.message_font_size}px Arial")
+            f"background-color:{backgnd_color};font:{self.message_font_size}px {self.message_font_color} Arial")
         new_tab.setFixedHeight(self.message_height)
         self.layout.addWidget(new_tab)
-        # some_widget = self.layout.itemAt(self.widget_ind).widget()
-        # self.widget_ind+=1
-        # childarr = self.scrollArea.children()
-        # for elem in childarr:
-        #     print(str(elem.setStyleSheet("background-color:red")))
         new_tab.show()
         self.auto_scroll()
-        # if self.last_msg_ind ==2:
-        #     self.remove_message_tabs()
         return None 
     
     def remove_message_tabs(self):#? () -> None 
