@@ -117,7 +117,14 @@ class Server:
                 return [True, ""]
         return [False, f"Account '{account_name}' doesn't exist"]
 
-    def is_existent(self, account_name):  # ! delete check_if_connected function
+    def get_conn(self, account_name): #? (string) -> object 
+        for elem in self.connections: #! user cannot be offline 
+            if elem[0] == account_name:
+                return elem[1]
+        print(f"No account named '{account_name}' has been found!")
+        return 0
+    
+    def is_existent(self, account_name):#? (string) -> bool 
         ans = self.db.is_existent(account_name)
         return ans
 

@@ -5,3 +5,5 @@ cmds.txt
 __pycache__
 test2.py
 serv.db
+usrA.db
+usrB.db

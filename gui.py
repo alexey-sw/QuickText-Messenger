@@ -6,9 +6,9 @@ from PyQt5.QtCore import QSaveFile, QTimer, qInstallMessageHandler
 from PyQt5 import QtCore
 import sys
 import threading
-# todo: add user db 
-# todo: colorize messages that have been sent 
-
+#TODO: design decent message styling 
+#Todo: display time info for message 
+#TODO: send messages with enter button 
 class Gui():    
     def __init__(self, window,client,message_arr):  # ? class, instance<- -> None
         self.window_class = window

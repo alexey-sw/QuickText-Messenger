@@ -64,9 +64,9 @@ class Sender:  # class is responsible for sending messages to other users
         pass
     
     def send(self, msg_len_formatted, msg_formatted,addr, is_account): #? bytes, bytes, [string or arr], bool<- -> None
-        if is_account == True:
+        if is_account == True:# if parameter specified is account 
             if self.server.is_online(addr):
-                connection = self.get_conn(addr) # if account is passed as a param
+                connection = self.server.get_conn(addr) # if account is passed as a param
             else:
                 self.server.update_deliv_queue(msg_formatted)
                 return 
@@ -106,29 +106,20 @@ class Sender:  # class is responsible for sending messages to other users
         message_len_formatted = self.parser.format_message_length(message_len,to_client=True)
         self.send(message_len_formatted,message_formatted,connection,is_account=False)
         return
-    def send_deliv_error(self,msg): #? object<- ->None
-        response = {
-            "command":"-usr_deliv_failure:",
-            "time": self.server.get_time(),
-            "from": "SERVER",
-            "to":msg["from"],
-            "error": "Such account doesn't exist", # the only reason why it can be 
-            "delay": 0
-        }
-        self.send_server_msg(response)
-        return 
     
-    def get_conn(self, account_name): #? string <- -> [array, 0]
-        for elem in self.server.connections:
-            if elem[0] == account_name:
-                if len(elem) != 1:  # if connection was specified
-
-                    return elem[1]
-                print(f"No account named '{account_name}' has been found!")
-                return 0
-
-        print(f"No account named '{account_name}' has been found!")
-        return 0
+    # def send_deliv_error(self,msg): #? object<- ->None
+    #     response = {
+    #         "command":"-usr_deliv_failure:",
+    #         "time": self.server.get_time(),
+    #         "from": "SERVER",
+    #         "to":msg["from"],
+    #         "error": "Such account doesn't exist", # the only reason why it can be 
+    #         "delay": 0
+    #     }
+    #     self.send_server_msg(response)
+    #     return 
+    
+    
     
     def send_account_status(self,message):
         account = message["text"]
