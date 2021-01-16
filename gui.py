@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QDialog, QLabel, QGridLayout
 from PyQt5 import uic
 from PyQt5.QtCore import QSaveFile, QTimer, qInstallMessageHandler
 from PyQt5 import QtCore
+from user_db_manager import User_db
 import sys
 import threading
 #TODO: design decent message styling 
@@ -16,7 +17,9 @@ class Gui():
         self.client = client 
         self.messages_to_display = message_arr 
         self.timer =QTimer()
-        self.to_check_status = True  
+        self.to_check_status = True
+        # self.db = User_db("usrA.db") if self.client.account == "a" else User_db("usrB.db")
+        # self.db.get_all_tbl()  
 
     def start(self):
         self.setup_qtimer()
@@ -37,6 +40,7 @@ class Gui():
             self.client.recipient_account_status["status_checked"]= True
             if is_existent==True:
                 self.window.change_button_color(self.window.select_button,self.window.offline_button_color)
+                # register_user()
                 if is_online==True:
                     self.window.change_button_color(self.window.select_button,self.window.online_button_color)
             else:

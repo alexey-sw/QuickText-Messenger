@@ -6,12 +6,22 @@
 #! we don't read value IS_DELIVERED and IS_READ if message has been sent from another account 
 #! message column contains plaintext only 
 
-#Algorithm:
+#Algorithm for chat change:
 # anytime user click select:
 # if value is different 
 # we look for table  CHAT_WITH_(ACCOUNT_NAME)
 # if there is no such table we create one 
 # if there is such table, then we retrieve all messages and append them to scrollArea and mark them according to IS_DELIVERED and IS_READ flag
+
+#Algorithm for message delivery:
+#if message is delivered from client -> check that select value is the same 
+#if select value is the same : display message, write message into db, 
+# otherwise write message into db
+
+#if message is from server-> change message status 
+
+
+#! user will not be able to log in under the same account on different devices 
 import sqlite3
 import time
 DEFAULT_TABLE = "sqlite_sequence"
@@ -19,39 +29,34 @@ DEFAULT_TABLE = "sqlite_sequence"
 #! there will be high level function upload_to_table(message)
 
 class User_db:
-    def __init__(self,filedir):#? (string)->None  
-        self.connection = sqlite3.connect(filedir)
+    def __init__(self):#? (string)->None  
+        self.db_dir = "user_db.db"
+        self.connection = sqlite3.connect(self.db_dir)
         self.to_drop = True 
-        self.db_dir = filedir
     
     def setup(self):#? ()-> None 
-        try:
-            
-            if self.to_drop:
-                for table in self.get_all_tbl():
-                    if table!=DEFAULT_TABLE:
-                        print(table)
-                        self.drop_tbl(table)                
-        except:
-            print("error occured on line 38") 
-            
-        table_name = "CHAT_WITH_b" if self.db_dir == "usrA.db" else "CHAT_WITH_a"
-        self.create_table(table_name)
-        self.connection.commit()
+        print(self.get_all_tbl())
+        if self.to_drop:
+            for table in self.get_all_tbl():
+                if table!=DEFAULT_TABLE:
+                    self.drop_tbl(table)                
+
         return None 
     
     def get_all_tbl(self): #?()->[of string]
         cursor = self.connection.cursor()
         table_array =cursor.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()
         self.connection.commit()
-        table_array = list(map(lambda elem:elem[0],table_array))
-        
+        table_array = list(map(lambda elem:"["+elem[0]+"]",table_array))
         return table_array
     
     #* edit operations 
     def add_to_table(self,message):#?(string,dict)->None
         account_from = message["from"]
-        table_name = self.compose_table_name(account_from)
+        account_to = message["to"]
+        table_name = self.compose_table_name(account_from,account_to)
+        if not(self.is_such_table(table_name)):
+            self.create_table(table_name)
         cursor = self.connection.cursor()
         date = message["time"]
         text = message["text"]
@@ -72,8 +77,11 @@ class User_db:
         message_matrix = cursor.execute("""SELECT * FROM {}""".format(table)).fetchall()
         return message_matrix
     
-    def compose_table_name(self,account_name):#? (string)->string 
-        table_string = f"CHAT_WITH_{account_name}"
+    def compose_table_name(self,first_account,second_account):#? (string)->string 
+        account_array = [first_account,second_account]
+        account_array.sort()
+        table_string = f"[{account_array[0]}|{account_array[1]}]"
+        print(table_string)
         return table_string
     
     def print_tbl(self,table):#? (string)->None
@@ -109,26 +117,45 @@ class User_db:
         else:
             return False
     
+    def register_user_pair(self,account_1,account_2):
+        table_name = self.compose_table_name(account_1,account_2)
+        self.create_table(table_name)
+        return None 
     
-        # user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        #                         account_name TEXT,
-        #                         is_online INTEGER
-
+    
+    
+        
 def get_time():
     return time.ctime()
 
-db = User_db("usrA.db")
+db = User_db()
 db.setup()
-table_name = "CHAT_WITH_b"
-for i in range(100):
+alph = "abcdefghigklmnopqrstuvwxyz"
+for i in range(20):
     response_message = {
-            "from":"b",
+            "from":alph[1],
             "text": "",
-            "to": "salam_aleikum",
+            "to": alph[4],
             "time": get_time(),
             "command": "-delivery_confirmed:",
             "delay": 0,
             "id":i
         }
     db.add_to_table(response_message)
-print(db.retrive_messages(table_name))
+
+for i in range(20):
+    response_message = {
+            "from":alph[i],
+            "text": "",
+            "to": alph[i+1],
+            "time": get_time(),
+            "command": "-delivery_confirmed:",
+            "delay": 0,
+            "id":i
+        }
+    db.add_to_table(response_message)
+table_array = db.get_all_tbl()
+for table in table_array:
+    db.print_tbl(table)
+    print("messages from table: ",table)
+

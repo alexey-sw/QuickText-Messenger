@@ -1,4 +1,4 @@
-from time import ctime
-
-current_time = ctime()
-print(type(current_time))
+cc_2  = 5
+words = ["abdlsd","helllo","aaa","bb"]
+words.sort()
+print(words)
