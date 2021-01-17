@@ -3,13 +3,41 @@ from sqlite3.dbapi2 import Date
 import threading
 import time
 import codecs
+
+from PyQt5.QtCore import qUnregisterResourceData
 from server_sender import Sender
 from server_parser import Parser
 from server_db import DB_Manager
+from user_db import *
 from queue import Queue
 #! server doesn't parse commands, they come clearly defined  with the message
-# TODO: implement multithreading with sqlite3
 
+
+#! need to rework unread messages sending
+#TODO: we don't have unsent messages anymore, all messages go to chat db  
+
+class Executor:
+    def __init__(self,client):
+        self.client = client
+        self.user_db = client.user_db 
+        pass
+    
+    def execute(self,message):
+        message_command = message["command"]
+        recipient_account = message["to"]
+        delay = message["delay"]
+        if message_command == "-s:":
+            self.user_db.log_message(message) #! delay feature will be implemented here 
+            sender.send_msg(message)
+        elif message_command == "-delivery_confirmed:":
+            sender.send_client_deliv_notif(message)
+        elif message_command == "-check_status:":
+            sender.send_account_status(message)
+        elif message_command == "-display_chat:":
+            self.client.send_chat_log(message)
+        return None 
+
+        
 class Server:
     def __init__(self):
         self.online_count = 0
@@ -20,11 +48,13 @@ class Server:
         self.encoding = "utf-8"
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.status_commands = [
-            "-delivery_confirmed:", "-d:", "-check_status:"]
+            "-delivery_confirmed:", "-d:", "-check_status:","-display_chat:"]
         self.delivery_queue = []  # * list of objects whose messages have to be delivered
         self.db = DB_Manager()
         self.connections = [] # only currently available users
-
+        self.user_db = User_db()
+        self.cmd_executor = Executor(self)
+        
     def get_time(self):  # ? ..<-   -> string
         return time.ctime()
 
@@ -35,22 +65,6 @@ class Server:
                 break
         self.db.disconnect_user(user_account)
         # self.db.update_value(MAIN_TB, user_account, "is_online", 0)
-        return None 
-
-    def execute_client_command(self, message):  # ? object<- -> None
-        message_command = message["command"]
-        recipient_account = message["to"]
-        if message_command == "-s:":
-            if self.is_existent(recipient_account):
-                sender.send_msg(message)
-            else:
-                sender.send_deliv_error(message)  # ! remove this shit
-        elif message_command == "-info:":
-            pass
-        elif message_command == "-delivery_confirmed:":
-            sender.send_client_deliv_notif(message)
-        elif message_command == "-check_status:":
-            sender.send_account_status(message)
         return None 
 
     def login_client(self, conn):  # ? arr<-  ->array: [string,bool,string ]
@@ -67,13 +81,24 @@ class Server:
         print("sending unsent messages ")
         if message_arr:
             for message in message_arr:
-                print(type(message))
                 message = parser.json_to_obj(message)
                 sender.send_msg(message)
         else:
             pass
         return
 
+    def send_chat_log(self,message):#?(dict)->None
+        table_name = message["text"]
+        message_array = self.user_db.retrive_messages(table_name)
+        if message_array:
+            for message in message_array:
+                print(message)
+                sender.send_log_msg(message)
+        else:
+            print("No messages for chat: ",table_name)
+            
+        return None 
+    
     def process_unsent_messages(self,account):#? (string)->None
         unsent_messages = self.db.get_unsent_messages(account)
         print("sending these messages: ", unsent_messages, " to ", account)
@@ -160,7 +185,8 @@ class Server:
 
             if unwrpt_message["command"] not in self.status_commands:
                 sender.send_server_deliv_notif(unwrpt_message)
-            self.execute_client_command(unwrpt_message)
+            self.cmd_executor.execute(unwrpt_message)
+            
         return None
     
     def start_server_thread(self):
@@ -175,6 +201,7 @@ class Server:
         self.sock.bind(self.ADDR)
         self.sock.listen()
         self.db.setup()
+        self.user_db.setup()
         self.start_server_thread()
 
 

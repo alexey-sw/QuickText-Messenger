@@ -68,7 +68,7 @@ class Sender:  # class is responsible for sending messages to other users
             if self.server.is_online(addr):
                 connection = self.server.get_conn(addr) # if account is passed as a param
             else:
-                self.server.update_deliv_queue(msg_formatted)
+                self.server.update_deliv_queue(msg_formatted)#! remove 
                 return 
         else:  # for beginning we will just ignore that message hasn't been sent to user if its
             # if connection is already in params 
@@ -107,6 +107,11 @@ class Sender:  # class is responsible for sending messages to other users
         self.send(message_len_formatted,message_formatted,connection,is_account=False)
         return
     
+    
+    def send_log_msg(self,message):#?(arr)->None
+        print("sending message ",message)
+        pass
+        
     # def send_deliv_error(self,msg): #? object<- ->None
     #     response = {
     #         "command":"-usr_deliv_failure:",

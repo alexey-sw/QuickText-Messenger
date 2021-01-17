@@ -27,7 +27,7 @@ class Client:
         self.logged_in = False
         self.gui = None
         self.messages_to_display = []  # this will be a database query
-        self.recipient_account_status = {
+        self.chat_account_status = {
             "account": None,  # none if account doesn't exist
             "is_existent": None,
             "is_online": None,
@@ -37,7 +37,7 @@ class Client:
         }
         self.delivered_messages = []  # texts of delivered messages
 
-    def start(self):#? ()->None 
+    def start(self):  # ? ()->None
         if not self.test_mode:
             try:
                 self.sock.connect(self.SERVERADDR)
@@ -53,18 +53,18 @@ class Client:
                 self.gui = Gui(Main_Window, self, self.messages_to_display)
                 self.gui.start()
 
-    def get_time(self):#? ()->string 
+    def get_time(self):  # ? ()->string
         return time.ctime()
 
-    def exit_client(self):#? ()->string 
+    def exit_client(self):  # ? ()->string
         os._exit(0)
 
-    def is_from_server(self, msg):#? (dict)->bool 
+    def is_from_server(self, msg):  # ? (dict)->bool
         if msg["from"] == "SERVER":
             return True
         return False
 
-    def receive_data(self, socket):#? (obj)->None 
+    def receive_data(self, socket):  # ? (obj)->None
         while True:
             try:
                 message_len = socket.recv(64)
@@ -98,17 +98,22 @@ class Client:
         elif command == "-usr_deliv_success:" or command == "-serv_deliv_success:":
             message_id = msg["id"]
             if command == "-usr_deliv_success:":
-                print(f"user delivery confirmed of message with {message_id} id ")
-                self.gui.highlight_message(message_id,first_star = False)
+                print(
+                    f"user delivery confirmed of message with {message_id} id ")
+                self.gui.highlight_message(message_id, first_star=False)
             else:
-                print(f"server delivery confirmed of message with {message_id} id ")
-                self.gui.highlight_message(message_id,first_star=True)
+                print(
+                    f"server delivery confirmed of message with {message_id} id ")
+                self.gui.highlight_message(message_id, first_star=True)
         elif command == "-account_status:":
-            self.update_recipient_account_status(msg)
+            self.update_chat_account_status(msg)
         return None
 
     def deliv_response(self, message):  # ? (obj)->None
+            
         sender = message["from"]
+        if sender!=self.chat_account_status["account"]:
+            return None 
         message_id = message["id"]
         response_message = {
             "from": self.account,
@@ -120,7 +125,7 @@ class Client:
             "id": message_id
         }
         self.send_deliv_response(response_message)
-        return None 
+        return None
 
     def login_process(self, socket):  # ?(obj) -> None
         while not self.logged_in:
@@ -138,7 +143,7 @@ class Client:
             socket.send(message_len_formatted)
             socket.send(login_message_formatted)
             self.receive_login_response(socket)
-        return None 
+        return None
         # add field for password
 
     def receive_login_response(self, socket):
@@ -148,7 +153,22 @@ class Client:
         message = socket.recv(formatted_msg_len)
         decoded_message = parser.format_message(message, to_server=False)
         self.execute_server_generated_commands(decoded_message)
-        return None 
+        return None
+
+    def display_chat(self):
+        account_arr = [self.account, self.chat_account_status["account"]]
+        account_arr.sort()
+        account_string = f"[{account_arr[0]}|{account_arr[1]}]"
+        message_obj = {
+            "text": account_string,  # ! if account_name is disconnect -> disconnect
+            "from": self.account,
+            "delay": 0,
+            "time": parser.get_time(),
+            "to": "SERVER",
+            "command": "-display_chat:"
+        }
+        self.send_message_obj(message_obj)
+        return None
 
     def send_message_obj(self, message):  # ? obj<- -> None
         formatted_msg = parser.format_message(message, to_server=True)
@@ -157,11 +177,11 @@ class Client:
             msg_len, to_server=True)
         self.send_bytes(formatted_msg_len)
         self.send_bytes(formatted_msg)
-        return None 
+        return None
 
     def get_account_status(self, account):
-        self.recipient_account_status["account"] = account
-        self.recipient_account_status["status_checked"] = None
+        self.chat_account_status["account"] = account
+        self.chat_account_status["status_checked"] = None
         message_obj = {
             "text": account,  # ! if account_name is disconnect -> disconnect
             "from": self.account,
@@ -171,8 +191,8 @@ class Client:
             "command": "-check_status:"
         }
         self.send_message_obj(message_obj)
-        return None 
-    
+        return None
+
     def send_bytes(self, msg):  # ? bytes socket<-  -> None
         if not self.test_mode:
             try:
@@ -189,15 +209,15 @@ class Client:
             len(msg_formatted), to_server=True)
         self.sock.send(msg_len_formatted)
         self.sock.send(msg_formatted)
-        return None 
+        return None
 
-    def update_recipient_account_status(self, message):
-        self.recipient_account_status["is_existent"] = message["is_existent"]
-        self.recipient_account_status["is_online"] = message["is_online"]
+    def update_chat_account_status(self, message):
+        self.chat_account_status["is_existent"] = message["is_existent"]
+        self.chat_account_status["is_online"] = message["is_online"]
         if not message["is_existent"]:
-            self.recipient_account_status["is_existent"] = None
-        self.recipient_account_status["status_checked"] = False
-        return None 
+            self.chat_account_status["is_existent"] = None
+        self.chat_account_status["status_checked"] = False
+        return None
 
 
 parser = Parser()

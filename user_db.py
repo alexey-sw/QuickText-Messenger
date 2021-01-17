@@ -31,7 +31,7 @@ DEFAULT_TABLE = "sqlite_sequence"
 class User_db:
     def __init__(self):#? (string)->None  
         self.db_dir = "user_db.db"
-        self.connection = sqlite3.connect(self.db_dir)
+        self.connection = sqlite3.connect(self.db_dir,check_same_thread=False)
         self.to_drop = True 
     
     def setup(self):#? ()-> None 
@@ -50,8 +50,10 @@ class User_db:
         table_array = list(map(lambda elem:"["+elem[0]+"]",table_array))
         return table_array
     
+    
+    
     #* edit operations 
-    def add_to_table(self,message):#?(string,dict)->None
+    def log_message(self,message):#?(string,dict)->None
         account_from = message["from"]
         account_to = message["to"]
         table_name = self.compose_table_name(account_from,account_to)
@@ -61,6 +63,8 @@ class User_db:
         date = message["time"]
         text = message["text"]
         message_id = message["id"]
+        print("appended message to table: ",table_name)
+        #! unique constraint failed! 
         cursor.execute("""INSERT INTO {}
             (
                 MESSAGE_ID,
@@ -74,8 +78,11 @@ class User_db:
 
     def retrive_messages(self,table):#?(string)->[[id(INT),text(string),date(string),IS_DELIVERED(bool),IS_READ(bool)]] 
         cursor = self.connection.cursor()
-        message_matrix = cursor.execute("""SELECT * FROM {}""".format(table)).fetchall()
-        return message_matrix
+        if self.is_such_table(table):
+            message_matrix = cursor.execute("""SELECT * FROM {}""".format(table)).fetchall()
+            return message_matrix
+        else:
+            return None 
     
     def compose_table_name(self,first_account,second_account):#? (string)->string 
         account_array = [first_account,second_account]
@@ -127,35 +134,35 @@ class User_db:
         
 def get_time():
     return time.ctime()
+# if __name__=="__main__":
+#     db = User_db()
+#     db.setup()
+#     alph = "abcdefghigklmnopqrstuvwxyz"
+#     for i in range(20):
+#         response_message = {
+#                 "from":alph[1],
+#                 "text": "",
+#                 "to": alph[4],
+#                 "time": get_time(),
+#                 "command": "-delivery_confirmed:",
+#                 "delay": 0,
+#                 "id":i
+#             }
+#         db.add_to_table(response_message)
 
-db = User_db()
-db.setup()
-alph = "abcdefghigklmnopqrstuvwxyz"
-for i in range(20):
-    response_message = {
-            "from":alph[1],
-            "text": "",
-            "to": alph[4],
-            "time": get_time(),
-            "command": "-delivery_confirmed:",
-            "delay": 0,
-            "id":i
-        }
-    db.add_to_table(response_message)
-
-for i in range(20):
-    response_message = {
-            "from":alph[i],
-            "text": "",
-            "to": alph[i+1],
-            "time": get_time(),
-            "command": "-delivery_confirmed:",
-            "delay": 0,
-            "id":i
-        }
-    db.add_to_table(response_message)
-table_array = db.get_all_tbl()
-for table in table_array:
-    db.print_tbl(table)
-    print("messages from table: ",table)
-
+#     for i in range(20):
+#         response_message = {
+#                 "from":alph[i],
+#                 "text": "",
+#                 "to": alph[i+1],
+#                 "time": get_time(),
+#                 "command": "-delivery_confirmed:",
+#                 "delay": 0,
+#                 "id":i
+#             }
+#         db.add_to_table(response_message)
+#     table_array = db.get_all_tbl()
+#     for table in table_array:
+#         db.print_tbl(table)
+#         print("messages from table: ",table)
+#     print(db.is_such_table("[a|c]"))
