@@ -81,10 +81,16 @@ class Client:
                 self.execute_server_generated_commands(decoded_message)
                 print(decoded_message)
             else:
-                print(decoded_message)
-                self.messages_to_display.append(decoded_message["text"])
+                self.display_message(decoded_message)
                 self.deliv_response(decoded_message)
         self.exit_client()
+
+    def display_message(self,decoded_message):#?(dict)->None 
+        if decoded_message["from"]!=self.chat_account_status["account"]: 
+            return None
+        else:
+            self.messages_to_display.append(decoded_message["text"])
+            return None
 
     def execute_server_generated_commands(self, msg):  # ? (obj)->None
         command = msg["command"]
@@ -95,6 +101,8 @@ class Client:
             self.logged_in = True
             obtained_account_val = msg["to"]
             self.account = obtained_account_val
+        elif command == "-display_chat:":
+            print(msg,msg["is_read"],msg["is_delivered"])
         elif command == "-usr_deliv_success:" or command == "-serv_deliv_success:":
             message_id = msg["id"]
             if command == "-usr_deliv_success:":
@@ -103,8 +111,6 @@ class Client:
                     
                     self.gui.highlight_message(message_id, first_star=False)
             else:
-                print(
-                    f"server delivery confirmed of message with {message_id} id ")
                 self.gui.highlight_message(message_id, first_star=True)
         elif command == "-account_status:":
             self.update_chat_account_status(msg)
@@ -113,9 +119,7 @@ class Client:
     def deliv_response(self, message):  # ? (obj)->None
         sender = message["from"]
         if sender!=self.chat_account_status["account"]:
-            print("sender!=self.chat_account_status")
             return None 
-        print("sending delivery response")
         message_id = message["id"]
         response_message = {
             "from": self.account,

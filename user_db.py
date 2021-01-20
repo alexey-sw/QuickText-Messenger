@@ -68,12 +68,14 @@ class User_db:
         cursor.execute("""INSERT INTO {}
             (
                 MESSAGE_ID,
+                SENDER,
                 MESSAGE_TEXT,
                 DATE,
                 IS_DELIVERED ,
                 IS_READ
-                ) VALUES(?,?,?,?,?)""".format(table_name),(message_id,text,date,0,0))
+                ) VALUES(?,?,?,?,?,?)""".format(table_name),(message_id,account_from,text,date,0,0))
         self.connection.commit()
+        print(self.retrive_messages(table_name))
         return None 
 
     def retrive_messages(self,table):#?(string)->[[id(INT),text(string),date(string),IS_DELIVERED(bool),IS_READ(bool)]] 
@@ -102,6 +104,7 @@ class User_db:
         cursor = self.connection.cursor()
         cursor.execute("""CREATE TABLE {}(
             MESSAGE_ID INTEGER PRIMARY KEY,
+            SENDER TEXT,
             MESSAGE_TEXT TEXT,
             DATE TEXT,
             IS_DELIVERED INTEGER,

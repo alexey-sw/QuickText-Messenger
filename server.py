@@ -87,12 +87,13 @@ class Server:
         return
 
     def send_chat_log(self,message):#?(dict)->None
+        account_to = message["from"]
         table_name = message["text"]
         message_array = self.user_db.retrive_messages(table_name)
         if message_array:
             for logged_message in message_array:
                 print(logged_message)
-                sender.send_log_msg(logged_message)
+                sender.send_log_msg(logged_message,account_to)
         else:
             print("No messages for chat: ",table_name)
             

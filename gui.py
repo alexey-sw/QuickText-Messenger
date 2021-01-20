@@ -72,7 +72,7 @@ class Gui():
             for i in range(len(self.messages_to_display)):
                 new_message = self.messages_to_display[i]
                 self.window.create_message_tab(
-                    new_message, from_this_device=False)
+                    new_message, from_this_account=False)
             self.messages_to_display.clear()
         self.check_status()
 
@@ -156,7 +156,7 @@ class Main_Window(QDialog):
                 delay = self.get_delay()[0]  # gets only hours
 
                 message = self.compose_message(recipient_account, text, delay)
-                self.create_message_tab(text, from_this_device=True)
+                self.create_message_tab(text, from_this_account=True)
                 self.client.send_message_obj(message)
             else:
                 pass
@@ -203,10 +203,10 @@ class Main_Window(QDialog):
         return None
 
     # ? string ,bool<- -> none
-    def create_message_tab(self, text, from_this_device=False, is_delivered=False, is_read=False):
+    def create_message_tab(self, text, from_this_account=False, is_delivered=False, is_read=False):
         self.last_msg_ind += 1
         new_tab = QLabel(self.scrollArea)
-        if from_this_device:
+        if from_this_account:
             backgnd_color = "#00FFFF"
         else:
             if is_read == False and is_delivered == False:
@@ -215,7 +215,7 @@ class Main_Window(QDialog):
                 backgnd_color = "#000080"  # *delivered and read
             else:
                 backgnd_color = "#0000FF"  # * delivered to server only
-        # backgnd_color = "#00FF00" if not(from_this_device) else "#00FFFF"
+        # backgnd_color = "#00FF00" if not(from_this_account) else "#00FFFF"
         new_tab.setText(text)
         new_tab.setStyleSheet(
             f"background-color:{backgnd_color};font:{self.message_font_size}px {self.message_font_color} Arial")

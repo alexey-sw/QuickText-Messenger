@@ -107,9 +107,31 @@ class Sender:  # class is responsible for sending messages to other users
         self.send(message_len_formatted,message_formatted,connection,is_account=False)
         return
     
+    def convert_num(self,val):
+        if val ==1:
+            return True
+        else:
+            return False
     
-    def send_log_msg(self,message):#?(arr)->None
+    def send_log_msg(self,message,account):#?(arr)->None
+        message_id = message[0]
+        sender = message[1]
+        text = message[2]
+        date = message[3]
+        is_delivered = self.convert_num(message[4])
+        is_read = self.convert_num(message[5])
+        message_obj = {
+            "to":account,
+            "from":"SERVER",
+            "text":text,
+            "id":message_id,
+            "command":"-display_chat:",
+            "is_delivered":is_delivered,
+            "is_read":is_read,
+            "error":""
+        }
         print("sending message ",message)
+        self.send_server_msg(message_obj)
         pass
         
     # def send_deliv_error(self,msg): #? object<- ->None
