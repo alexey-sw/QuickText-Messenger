@@ -189,6 +189,8 @@ class Main_Window(QDialog):
         self.select_button_value = recipient_account_value
         self.client.get_account_status(recipient_account_value)
         self.change_button_color(self.select_button, "yellow")
+        self.client.display_chat()
+        print("asking server for chat history!  line 193 gui.py")
         return None
 
     def auto_scroll(self):

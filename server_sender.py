@@ -41,7 +41,7 @@ class Sender:  # class is responsible for sending messages to other users
             "to":msg["to"],
             "command":"-usr_deliv_success:",
             "time":self.server.get_time(),
-            "text":"message has reached the client",
+            "text":msg["from"],
             "error":"",
             "id":message_id
         }

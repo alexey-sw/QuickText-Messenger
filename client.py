@@ -71,7 +71,6 @@ class Client:
             except:
                 print("client error")
                 break
-
             formatted_msg_len = parser.format_message_length(
                 message_len, False)
             message = socket.recv(formatted_msg_len)
@@ -80,8 +79,9 @@ class Client:
             is_server_message = self.is_from_server(decoded_message)
             if is_server_message:  # we don't send notifications for server messages
                 self.execute_server_generated_commands(decoded_message)
+                print(decoded_message)
             else:
-                print(f"{decoded_message['text']} will be displayed")
+                print(decoded_message)
                 self.messages_to_display.append(decoded_message["text"])
                 self.deliv_response(decoded_message)
         self.exit_client()
@@ -98,9 +98,10 @@ class Client:
         elif command == "-usr_deliv_success:" or command == "-serv_deliv_success:":
             message_id = msg["id"]
             if command == "-usr_deliv_success:":
-                print(
-                    f"user delivery confirmed of message with {message_id} id ")
-                self.gui.highlight_message(message_id, first_star=False)
+                sender = msg["text"]
+                if sender ==self.chat_account_status["account"]:
+                    
+                    self.gui.highlight_message(message_id, first_star=False)
             else:
                 print(
                     f"server delivery confirmed of message with {message_id} id ")
@@ -110,10 +111,11 @@ class Client:
         return None
 
     def deliv_response(self, message):  # ? (obj)->None
-            
         sender = message["from"]
         if sender!=self.chat_account_status["account"]:
+            print("sender!=self.chat_account_status")
             return None 
+        print("sending delivery response")
         message_id = message["id"]
         response_message = {
             "from": self.account,
@@ -155,12 +157,16 @@ class Client:
         self.execute_server_generated_commands(decoded_message)
         return None
 
-    def display_chat(self):
+    def get_chat_string(self):
         account_arr = [self.account, self.chat_account_status["account"]]
         account_arr.sort()
         account_string = f"[{account_arr[0]}|{account_arr[1]}]"
+        return account_string
+    
+    def display_chat(self):
+        chat_string = self.get_chat_string()
         message_obj = {
-            "text": account_string,  # ! if account_name is disconnect -> disconnect
+            "text": chat_string,  # ! if account_name is disconnect -> disconnect
             "from": self.account,
             "delay": 0,
             "time": parser.get_time(),

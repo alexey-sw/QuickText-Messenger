@@ -17,24 +17,23 @@ from queue import Queue
 #TODO: we don't have unsent messages anymore, all messages go to chat db  
 
 class Executor:
-    def __init__(self,client):
-        self.client = client
-        self.user_db = client.user_db 
+    def __init__(self,server):
+        self.server = server
+        self.user_db = server.user_db 
         pass
     
     def execute(self,message):
         message_command = message["command"]
-        recipient_account = message["to"]
-        delay = message["delay"]
         if message_command == "-s:":
             self.user_db.log_message(message) #! delay feature will be implemented here 
             sender.send_msg(message)
         elif message_command == "-delivery_confirmed:":
+            print("delivery confirmed")
             sender.send_client_deliv_notif(message)
         elif message_command == "-check_status:":
             sender.send_account_status(message)
         elif message_command == "-display_chat:":
-            self.client.send_chat_log(message)
+            self.server.send_chat_log(message)
         return None 
 
         
@@ -91,9 +90,9 @@ class Server:
         table_name = message["text"]
         message_array = self.user_db.retrive_messages(table_name)
         if message_array:
-            for message in message_array:
-                print(message)
-                sender.send_log_msg(message)
+            for logged_message in message_array:
+                print(logged_message)
+                sender.send_log_msg(logged_message)
         else:
             print("No messages for chat: ",table_name)
             
