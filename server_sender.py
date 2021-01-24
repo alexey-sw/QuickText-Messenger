@@ -9,7 +9,11 @@ class Sender:  # class is responsible for sending messages to other users
         self.parser = parser
 
     def send_msg(self, msg):  #? obj<- -> None 
+        sender = msg["from"]
         recipient_account = msg["to"]
+        if sender==recipient_account:
+            return None
+        
         delay = msg["delay"]
         msg_formatted = self.parser.format_message(msg, to_client=True)
         message_len = len(msg_formatted)
@@ -23,7 +27,7 @@ class Sender:  # class is responsible for sending messages to other users
         else:
             self.send(message_len_formatted, msg_formatted,
                       recipient_account,is_account = True)
-        return  
+        return  None 
        
     def send_server_msg(self,msg):#? obj<- -> None
         # no delays for this type of messages
@@ -32,7 +36,7 @@ class Sender:  # class is responsible for sending messages to other users
         msg_len = len(msg_formatted)
         msg_len_formatted = self.parser.format_message_length(msg_len,to_client = True)
         self.send(msg_len_formatted,msg_formatted,recipient_account,is_account = True)
-        return 
+        return None 
     
     def send_client_deliv_notif(self,msg): #? obj <- -> None
         message_id = msg["id"]
@@ -61,8 +65,9 @@ class Sender:  # class is responsible for sending messages to other users
             "id":message_id
         }
         self.send_server_msg(message)
-        pass
+        return None 
     
+        
     def send(self, msg_len_formatted, msg_formatted,addr, is_account): #? bytes, bytes, [string or arr], bool<- -> None
         if is_account == True:# if parameter specified is account 
             if self.server.is_online(addr):
@@ -75,7 +80,7 @@ class Sender:  # class is responsible for sending messages to other users
             connection = addr
         connection.send(msg_len_formatted)
         connection.send(msg_formatted)
-        return 
+        return None 
 
     def send_login_affirmation(self, account_name): # ? string<- -> None 
         print(f"Sending login affirmation to {account_name}")
@@ -89,7 +94,7 @@ class Sender:  # class is responsible for sending messages to other users
         }
 
         self.send_server_msg(message)
-        return
+        return None 
 
     # doesn't work because we don't have account value, if login is unsuccessfult
     def send_login_rejection(self, connection, error): #? arr, string <- -> None 
@@ -105,9 +110,9 @@ class Sender:  # class is responsible for sending messages to other users
         message_len = len(message_formatted)
         message_len_formatted = self.parser.format_message_length(message_len,to_client=True)
         self.send(message_len_formatted,message_formatted,connection,is_account=False)
-        return
+        return None 
     
-    def convert_num(self,val):
+    def convert_num(self,val):#?(int)->bool 
         if val ==1:
             return True
         else:
@@ -128,26 +133,13 @@ class Sender:  # class is responsible for sending messages to other users
             "command":"-display_chat:",
             "is_delivered":is_delivered,
             "is_read":is_read,
+            "sender":sender,
             "error":""
         }
         print("sending message ",message)
         self.send_server_msg(message_obj)
-        pass
+        return None 
         
-    # def send_deliv_error(self,msg): #? object<- ->None
-    #     response = {
-    #         "command":"-usr_deliv_failure:",
-    #         "time": self.server.get_time(),
-    #         "from": "SERVER",
-    #         "to":msg["from"],
-    #         "error": "Such account doesn't exist", # the only reason why it can be 
-    #         "delay": 0
-    #     }
-    #     self.send_server_msg(response)
-    #     return 
-    
-    
-    
     def send_account_status(self,message):
         account = message["text"]
         is_existent = self.server.is_existent(account)
@@ -163,4 +155,4 @@ class Sender:  # class is responsible for sending messages to other users
         }
         
         self.send_server_msg(message_obj)
-        return 
+        return None 

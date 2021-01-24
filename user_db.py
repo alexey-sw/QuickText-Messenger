@@ -24,10 +24,10 @@
 #! user will not be able to log in under the same account on different devices 
 import sqlite3
 import time
+#! fix it 
 DEFAULT_TABLE = "sqlite_sequence"
 
-#! there will be high level function upload_to_table(message)
-
+#Todo: change message status when message is read, remove unsent messages 
 class User_db:
     def __init__(self):#? (string)->None  
         self.db_dir = "user_db.db"
@@ -57,6 +57,8 @@ class User_db:
         account_from = message["from"]
         account_to = message["to"]
         table_name = self.compose_table_name(account_from,account_to)
+        print("All tables", self.get_all_tbl())
+        print(table_name,"table name")
         if not(self.is_such_table(table_name)):
             self.create_table(table_name)
         cursor = self.connection.cursor()
@@ -102,6 +104,7 @@ class User_db:
     
     def create_table(self,table_name):#?(string) ->Bool
         cursor = self.connection.cursor()
+        
         cursor.execute("""CREATE TABLE {}(
             MESSAGE_ID INTEGER PRIMARY KEY,
             SENDER TEXT,
@@ -114,13 +117,28 @@ class User_db:
         self.connection.commit()
         return None 
     
-    def drop_tbl(self,table):#?(string)->None 
+    def drop_tbl(self,table):#?(string)->None
+        table = self.correct_table_spelling(table)
         cursor = self.connection.cursor()
         cursor.execute("DROP TABLE {};".format(table))
         self.connection.commit()
         return None 
-        
+    
+    def correct_table_spelling(self,table_name):#?(string)->string
+        if not "["  or not "]" in table_name:
+            table_name = f"[{table_name}]"
+        else:
+            pass
+        return table_name
+    
+            
+
     def is_such_table(self,table):#? (string) -> Bool
+        if not "[" or  not "]" in table:
+            print(table,"tablename line 130")
+            table = f"[{table}]"
+        print(table,"tablename line 132")
+
         table_array =self.get_all_tbl()
         if table in table_array:
             return True 

@@ -6,6 +6,7 @@ from PyQt5.QtCore import QSaveFile, QTimer, qInstallMessageHandler
 from PyQt5 import QtCore
 import sys
 import threading
+from time import sleep 
 # TODO: design decent message styling
 # Todo: display time info for message
 # TODO: send messages with enter button
@@ -19,9 +20,6 @@ class Gui():
         self.messages_to_display = message_arr
         self.timer = QTimer()
         self.to_check_status = True
-        self.chat_loaded = False
-        # self.db = User_db("usrA.db") if self.client.account == "a" else User_db("usrB.db")
-        # self.db.get_all_tbl()
 
     def start(self):
         self.setup_qtimer()
@@ -39,13 +37,10 @@ class Gui():
             pass
         elif is_checked == False:
 
-            self.client.chat_account_status["status_checked"] = True
             if is_existent == True:
+                self.client.chat_account_status["status_checked"] = True
                 self.window.change_button_color(
                     self.window.select_button, self.window.offline_button_color)
-                if not self.chat_loaded:
-                    self.client.display_chat()
-                    self.chat_loaded = True
                 if is_online == True:
                     self.window.change_button_color(
                         self.window.select_button, self.window.online_button_color)
@@ -53,6 +48,7 @@ class Gui():
                 self.window.change_button_color(
                     self.window.select_button, self.window.error_button_color)
                 self.window.clear_field(self.window.account_field)
+                self.client.chat_account_status["status_checked"] = None
 
         elif is_checked == True:
             if self.to_check_status:
@@ -67,19 +63,28 @@ class Gui():
         self.timer.timeout.connect(self.check_messages)
 
     def check_messages(self):  # ? None < -- --> None
-        #! rewrite
+        print("checking messages")
         if self.messages_to_display != []:
+            print(self.messages_to_display,"messages to display ")
             for i in range(len(self.messages_to_display)):
-                new_message = self.messages_to_display[i]
-                self.window.create_message_tab(
-                    new_message, from_this_account=False)
+                new_message_matrix = self.messages_to_display[i]
+                text = new_message_matrix[0]
+                status_vals = new_message_matrix[1]
+                if len(status_vals)==1: #! in case it wasn't message sent from this account 
+                    self.window.create_message_tab(
+                        text, from_this_account=False)
+                else:
+                    print(status_vals,"status vals line 81")
+                    is_delivered = status_vals[1]
+                    is_read = status_vals[2]
+                    self.window.create_message_tab(text,from_this_account = True,is_delivered = is_delivered,is_read = is_read)
             self.messages_to_display.clear()
         self.check_status()
 
     def highlight_message(self, id, first_star):
         self.window.highlight_message_tab(id, first_star)
         pass
-
+#! array of widget isn't added 
 
 class Main_Window(QDialog):
 
@@ -113,7 +118,7 @@ class Main_Window(QDialog):
         self.online_button_color = "#009900"
 
         self.select_button_value = ""
-        self.last_msg_ind = 0  # is for current chat
+        self.new_msg_ind = 0
 
     def setup_widgets(self):  # ? ..<- -> None
         self.send_button.clicked.connect(self.send_button_clicked)
@@ -150,7 +155,6 @@ class Main_Window(QDialog):
         recipient_account = self.get_account_val()
         if recipient_account:
             text = self.get_message_text()
-            print(text)
             if text:
                 self.clear_field(self.message_field)
                 delay = self.get_delay()[0]  # gets only hours
@@ -179,7 +183,7 @@ class Main_Window(QDialog):
             "text": text,
             "command": "-s:",
             "time": self.client.get_time(),
-            "id": self.last_msg_ind
+            "id": self.new_msg_ind
         }
         return msg
 
@@ -187,6 +191,7 @@ class Main_Window(QDialog):
         #! firstly we need to check in a local database, when in global(server database)
         recipient_account_value = self.account_select.text()
         self.select_button_value = recipient_account_value
+        self.remove_message_tabs()
         self.client.get_account_status(recipient_account_value)
         self.change_button_color(self.select_button, "yellow")
         self.client.display_chat()
@@ -204,7 +209,8 @@ class Main_Window(QDialog):
 
     # ? string ,bool<- -> none
     def create_message_tab(self, text, from_this_account=False, is_delivered=False, is_read=False):
-        self.last_msg_ind += 1
+        print("created nessage tab with text: ",text)
+        self.new_msg_ind += 1
         new_tab = QLabel(self.scrollArea)
         if from_this_account:
             backgnd_color = "#00FFFF"
@@ -225,11 +231,34 @@ class Main_Window(QDialog):
         self.auto_scroll()
         return None
 
+    def define_background_color(self,from_this_account,is_delivered,is_read):#?(bool,bool,bool)->string
+        if from_this_account:
+            backgnd_color = "#00FFFF"
+        else:
+            if is_read == False and is_delivered == False:
+                backgnd_color = "#00FF00"  # *not delivered and not read
+            elif is_read == True:
+                backgnd_color = "#000080"  # *delivered and read
+            else:
+                backgnd_color = "#0000FF"  # * delivered to server only
+        return backgnd_color 
+    
     def remove_message_tabs(self):  # ? () -> None
-        widget_arr = self.scrollArea.children()
-        for i in range(len(widget_arr)):
-            self.scrollArea.takeWidget()
-        return None
+        #! rewrite as it deletes messages with layout so that we can't append any other messages later 
+        # print("messages removed")
+        # widget_arr = self.scrollArea.children()
+        # for i in range(1,len(widget_arr)):
+        #     self.scrollArea.takeWidget()
+        # return None
+        
+        layout = self.layout
+        while layout.count():
+            child = layout.takeAt(0)
+            widget = child.widget()
+            if widget:
+                del widget
+            del child
+        return None 
 
     def highlight_message_tab(self, ind, first_star=True):
         message_widget = self.layout.itemAtPosition(ind, 0).widget()

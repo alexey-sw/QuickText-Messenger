@@ -4,12 +4,11 @@ import threading
 import time
 import codecs
 
-from PyQt5.QtCore import qUnregisterResourceData
 from server_sender import Sender
 from server_parser import Parser
 from server_db import DB_Manager
 from user_db import *
-from queue import Queue
+
 #! server doesn't parse commands, they come clearly defined  with the message
 
 
@@ -26,6 +25,7 @@ class Executor:
         message_command = message["command"]
         if message_command == "-s:":
             self.user_db.log_message(message) #! delay feature will be implemented here 
+            #! fix bug when user sends messages to himself 
             sender.send_msg(message)
         elif message_command == "-delivery_confirmed:":
             print("delivery confirmed")
@@ -33,6 +33,7 @@ class Executor:
         elif message_command == "-check_status:":
             sender.send_account_status(message)
         elif message_command == "-display_chat:":
+            print("sending chat log line 36 server.py")
             self.server.send_chat_log(message)
         return None 
 
@@ -177,6 +178,9 @@ class Server:
                 print(account_name, "disconnected")
                 self.disconnect_user(account_name)
                 self.db.get_tbl("MAIN_TABLE")
+                if self.user_db.is_such_table("a|a"):
+                    self.user_db.drop_tbl("a|a")
+                print("line 181, table dropped")
                 break
             msg_length = parser.format_message_length(msg_length, False)
             message = conn.recv(msg_length)
