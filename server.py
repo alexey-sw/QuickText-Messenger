@@ -34,7 +34,6 @@ class Executor:
         elif message_command == "-check_status:":
             sender.send_account_status(message)
         elif message_command == "-display_chat:":
-            print("sending chat log line 36 server.py")
             self.server.send_chat_log(message)
         return None
 

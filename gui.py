@@ -77,6 +77,7 @@ class Gui():
                     print(status_vals,"status vals line 81")
                     is_delivered = status_vals[1]
                     is_read = status_vals[2]
+                    print(is_delivered,is_read,"status values ")
                     self.window.create_message_tab(text,from_this_account = True,is_delivered = is_delivered,is_read = is_read)
             self.messages_to_display.clear()
         self.check_status()
@@ -157,10 +158,17 @@ class Main_Window(QDialog):
             text = self.get_message_text()
             if text:
                 self.clear_field(self.message_field)
-                delay = self.get_delay()[0]  # gets only hours
-
+                delay = self.get_delay()[0]  # gets only hour
                 message = self.compose_message(recipient_account, text, delay)
-                self.create_message_tab(text, from_this_account=True)
+                if recipient_account == self.client.account:
+                    to_self = True
+                    is_delivered = True
+                    is_read = True
+                else:
+                    to_self = False 
+                    is_delivered = False
+                    is_read = False 
+                self.create_message_tab(text, from_this_account=True,is_delivered = is_delivered,is_read = is_read,to_self=to_self)
                 self.client.send_message_obj(message)
             else:
                 pass
@@ -195,7 +203,7 @@ class Main_Window(QDialog):
         self.client.get_account_status(recipient_account_value)
         self.change_button_color(self.select_button, "yellow")
         self.client.display_chat()
-        print("asking server for chat history!  line 193 gui.py")
+        print("prompting server for chat history!  line 193 gui.py")
         return None
 
     def auto_scroll(self):
@@ -208,17 +216,20 @@ class Main_Window(QDialog):
         return None
 
     # ? string ,bool<- -> none
-    def create_message_tab(self, text, from_this_account=False, is_delivered=False, is_read=False):
+    def create_message_tab(self, text, from_this_account=False, is_delivered=False, is_read=False,to_self = False):
         print("created nessage tab with text: ",text)
         self.new_msg_ind += 1
         new_tab = QLabel(self.scrollArea)
-        if from_this_account:
+        print(is_delivered,is_read,to_self,"is deliv, is read, to self ")
+        if from_this_account and not(to_self):
             backgnd_color = "#00FFFF"
         else:
             if is_read == False and is_delivered == False:
                 backgnd_color = "#00FF00"  # *not delivered and not read
             elif is_read == True:
+                print("message is read ")
                 backgnd_color = "#000080"  # *delivered and read
+                
             else:
                 backgnd_color = "#0000FF"  # * delivered to server only
         # backgnd_color = "#00FF00" if not(from_this_account) else "#00FFFF"

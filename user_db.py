@@ -65,6 +65,11 @@ class User_db:
         date = message["time"]
         text = message["text"]
         message_id = message["id"]
+        is_delivered = 0
+        is_read = 0
+        if account_from == account_to:
+            is_delivered = 1
+            is_read = 1  
         print("appended message to table: ",table_name)
         #! unique constraint failed! 
         cursor.execute("""INSERT INTO {}
@@ -75,7 +80,7 @@ class User_db:
                 DATE,
                 IS_DELIVERED ,
                 IS_READ
-                ) VALUES(?,?,?,?,?,?)""".format(table_name),(message_id,account_from,text,date,0,0))
+                ) VALUES(?,?,?,?,?,?)""".format(table_name),(message_id,account_from,text,date,is_delivered,is_read))
         self.connection.commit()
         print(self.retrive_messages(table_name))
         return None 
