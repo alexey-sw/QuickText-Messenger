@@ -255,14 +255,17 @@ class Main_Window(QDialog):
         #     self.scrollArea.takeWidget()
         # return None
         #! this is buggy 
+        # layout = self.layout
+        # while layout.count():
+        #     child = layout.takeAt(0)
+        #     widget = child.widget()
+        #     if widget:
+        #         del widget
+        #     del child
+        # return None 
         layout = self.layout
-        while layout.count():
-            child = layout.takeAt(0)
-            widget = child.widget()
-            if widget:
-                del widget
-            del child
-        return None 
+        for i in reversed(range(layout.count())): 
+            layout.itemAt(i).widget().setParent(None)
 
     def highlight_message_tab(self, ind):
         message_widget = self.layout.itemAtPosition(ind, 0).widget()
