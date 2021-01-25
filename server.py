@@ -186,9 +186,8 @@ class Server:
             message = conn.recv(msg_length)
 
             unwrpt_message = parser.format_message(message, False)
-
-            if unwrpt_message["command"] not in self.status_commands:
-                sender.send_server_deliv_notif(unwrpt_message)
+            # if unwrpt_message["command"] not in self.status_commands:
+            #     sender.send_server_deliv_notif(unwrpt_message)
             self.cmd_executor.execute(unwrpt_message)
 
         return None

@@ -63,7 +63,6 @@ class Gui():
         self.timer.timeout.connect(self.check_messages)
 
     def check_messages(self):  # ? None < -- --> None
-        print("checking messages")
         if self.messages_to_display != []:
             print(self.messages_to_display,"messages to display ")
             for i in range(len(self.messages_to_display)):
@@ -74,11 +73,8 @@ class Gui():
                     self.window.create_message_tab(
                         text, from_this_account=False)
                 else:
-                    print(status_vals,"status vals line 81")
-                    is_delivered = status_vals[1]
-                    is_read = status_vals[2]
-                    print(is_delivered,is_read,"status values ")
-                    self.window.create_message_tab(text,from_this_account = True,is_delivered = is_delivered,is_read = is_read)
+                    is_read = status_vals[1]
+                    self.window.create_message_tab(text,from_this_account = True,is_read = is_read)
             self.messages_to_display.clear()
         self.check_status()
 
@@ -162,13 +158,11 @@ class Main_Window(QDialog):
                 message = self.compose_message(recipient_account, text, delay)
                 if recipient_account == self.client.account:
                     to_self = True
-                    is_delivered = True
                     is_read = True
                 else:
                     to_self = False 
-                    is_delivered = False
                     is_read = False 
-                self.create_message_tab(text, from_this_account=True,is_delivered = is_delivered,is_read = is_read,to_self=to_self)
+                self.create_message_tab(text, from_this_account=True,is_read = is_read,to_self=to_self)
                 self.client.send_message_obj(message)
             else:
                 pass
@@ -216,23 +210,22 @@ class Main_Window(QDialog):
         return None
 
     # ? string ,bool<- -> none
-    def create_message_tab(self, text, from_this_account=False, is_delivered=False, is_read=False,to_self = False):
+    def create_message_tab(self, text, from_this_account=False, is_read=False,to_self = False):
         print("created nessage tab with text: ",text)
         self.new_msg_ind += 1
         new_tab = QLabel(self.scrollArea)
-        print(is_delivered,is_read,to_self,"is deliv, is read, to self ")
-        if from_this_account and not(to_self):
-            backgnd_color = "#00FFFF"
-        else:
-            if is_read == False and is_delivered == False:
-                backgnd_color = "#00FF00"  # *not delivered and not read
-            elif is_read == True:
-                print("message is read ")
-                backgnd_color = "#000080"  # *delivered and read
+        # if from_this_account and not(to_self):
+        #     backgnd_color = "#00FFFF"
+        # else:
+        #     if is_read == False:
+        #         backgnd_color = "#00FF00"  # *not delivered and not read
+        #     elif is_read == True:
+        #         print("message is read ")
+        #         backgnd_color = "#000080"  # *delivered and read
                 
-            else:
-                backgnd_color = "#0000FF"  # * delivered to server only
-        # backgnd_color = "#00FF00" if not(from_this_account) else "#00FFFF"
+        #     else:
+        #         backgnd_color = "#0000FF"  # * delivered to server only
+        backgnd_color = self.define_background_color(from_this_account,is_read)
         new_tab.setText(text)
         new_tab.setStyleSheet(
             f"background-color:{backgnd_color};font:{self.message_font_size}px {self.message_font_color} Arial")
@@ -242,11 +235,11 @@ class Main_Window(QDialog):
         self.auto_scroll()
         return None
 
-    def define_background_color(self,from_this_account,is_delivered,is_read):#?(bool,bool,bool)->string
+    def define_background_color(self,from_this_account,is_read):#?(bool,bool,bool)->string
         if from_this_account:
             backgnd_color = "#00FFFF"
         else:
-            if is_read == False and is_delivered == False:
+            if is_read == False:
                 backgnd_color = "#00FF00"  # *not delivered and not read
             elif is_read == True:
                 backgnd_color = "#000080"  # *delivered and read
@@ -261,7 +254,7 @@ class Main_Window(QDialog):
         # for i in range(1,len(widget_arr)):
         #     self.scrollArea.takeWidget()
         # return None
-        
+        #! this is buggy 
         layout = self.layout
         while layout.count():
             child = layout.takeAt(0)
@@ -271,8 +264,8 @@ class Main_Window(QDialog):
             del child
         return None 
 
-    def highlight_message_tab(self, ind, first_star=True):
+    def highlight_message_tab(self, ind):
         message_widget = self.layout.itemAtPosition(ind, 0).widget()
-        new_color = "#0000FF" if first_star else "#000080"
+        new_color = "#000080" #!read_message_color
         message_widget.setStyleSheet(f"background-color:{new_color}")
         return None

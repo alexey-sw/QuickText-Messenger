@@ -52,20 +52,20 @@ class Sender:  # class is responsible for sending messages to other users
         self.send_server_msg(message)
         return None 
     
-    def send_server_deliv_notif(self,msg): #? obj<- ->None
-        # sends to sender that message was delivered 
-        message_id = msg["id"]
-        message = {
-            "from":"SERVER",
-            "to":msg["from"],
-            "command":"-serv_deliv_success:",
-            "time":self.server.get_time(),
-            "text":"message has reached the server",
-            "error":"",
-            "id":message_id
-        }
-        self.send_server_msg(message)
-        return None 
+    # def send_server_deliv_notif(self,msg): #? obj<- ->None
+    #     # sends to sender that message was delivered 
+    #     message_id = msg["id"]
+    #     message = {
+    #         "from":"SERVER",
+    #         "to":msg["from"],
+    #         "command":"-serv_deliv_success:",
+    #         "time":self.server.get_time(),
+    #         "text":"message has reached the server",
+    #         "error":"",
+    #         "id":message_id
+    #     }
+    #     self.send_server_msg(message)
+    #     return None 
     
         
     def send(self, msg_len_formatted, msg_formatted,addr, is_account): #? bytes, bytes, [string or arr], bool<- -> None

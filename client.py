@@ -99,8 +99,6 @@ class Client:
             
             status_vals = self.get_status_values(decoded_message)
             self.messages_to_display.append([text,status_vals])
-            print(self.messages_to_display)
-            print(self.gui.messages_to_display)
             return None
 
     def get_status_values(self,decoded_message):
@@ -125,17 +123,14 @@ class Client:
             obtained_account_val = msg["to"]
             self.account = obtained_account_val
         elif command == "-display_chat:":  
-            print("to display message")#! incorrect 
+            print("to display message")
             self.display_message(msg)
-        elif command == "-usr_deliv_success:" or command == "-serv_deliv_success:":
+        elif command == "-usr_deliv_success:":
             message_id = msg["id"]
-            if command == "-usr_deliv_success:":
-                sender = msg["text"]
-                if sender ==self.chat_account_status["account"]:
-                    
-                    self.gui.highlight_message(message_id, first_star=False)
-            else:
-                self.gui.highlight_message(message_id, first_star=True)
+            sender = msg["text"]
+            if sender ==self.chat_account_status["account"]:
+                self.gui.highlight_message(message_id, first_star=False)
+                
         elif command == "-account_status:":
             self.update_chat_account_status(msg)
         return None
