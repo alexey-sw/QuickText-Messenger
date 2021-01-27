@@ -1,88 +1,72 @@
 import threading
 
-#! rework error delivery 
+#! rework error delivery
+
+
 class Sender:  # class is responsible for sending messages to other users
-    def __init__(self,server,parser): #? class, class <- -> None
+    def __init__(self, server, parser):  # ? class, class <- -> None
         self.encoding = "Windows 1251"
         self.max_header_size = 64
         self.server = server
         self.parser = parser
 
-    def send_msg(self, msg):  #? obj<- -> None 
+    def send_msg(self, msg):  # ? obj<- -> None
         sender = msg["from"]
         recipient_account = msg["to"]
-        if sender==recipient_account:
+        if sender == recipient_account:
             return None
-        
-        delay = msg["delay"]
+
+        # delay = msg["delay"]
         msg_formatted = self.parser.format_message(msg, to_client=True)
         message_len = len(msg_formatted)
-        message_len_formatted = self.parser.format_message_length(message_len, True)
+        message_len_formatted = self.parser.format_message_length(
+            message_len, True)
+        self.send(message_len_formatted, msg_formatted,
+                  recipient_account, is_account=True)
+        return None
 
-        if delay:
-            delay = float(delay)
-            send_timer = threading.Timer(delay, self.send, args=(
-                message_len_formatted, msg_formatted, recipient_account,True))
-            send_timer.start()
-        else:
-            self.send(message_len_formatted, msg_formatted,
-                      recipient_account,is_account = True)
-        return  None 
-       
-    def send_server_msg(self,msg):#? obj<- -> None
+    def send_server_msg(self, msg):  # ? obj<- -> None
         # no delays for this type of messages
         recipient_account = msg["to"]
-        msg_formatted = self.parser.format_message(msg,to_client = True)
+        msg_formatted = self.parser.format_message(msg, to_client=True)
         msg_len = len(msg_formatted)
-        msg_len_formatted = self.parser.format_message_length(msg_len,to_client = True)
-        self.send(msg_len_formatted,msg_formatted,recipient_account,is_account = True)
-        return None 
-    
-    def send_client_deliv_notif(self,msg): #? obj <- -> None
+        msg_len_formatted = self.parser.format_message_length(
+            msg_len, to_client=True)
+        self.send(msg_len_formatted, msg_formatted,
+                  recipient_account, is_account=True)
+        return None
+
+    def send_client_deliv_notif(self, msg):  # ? obj <- -> None
         message_id = msg["id"]
         message = {
-            "from":"SERVER",
-            "to":msg["to"],
-            "command":"-usr_deliv_success:",
-            "time":self.server.get_time(),
-            "text":msg["from"],
-            "error":"",
-            "id":message_id
+            "from": "SERVER",
+            "to": msg["to"],
+            "command": "-usr_deliv_success:",
+            "time": self.server.get_time(),
+            "text": msg["from"],
+            "error": "",
+            "id": message_id
         }
         self.send_server_msg(message)
-        return None 
-    
-    # def send_server_deliv_notif(self,msg): #? obj<- ->None
-    #     # sends to sender that message was delivered 
-    #     message_id = msg["id"]
-    #     message = {
-    #         "from":"SERVER",
-    #         "to":msg["from"],
-    #         "command":"-serv_deliv_success:",
-    #         "time":self.server.get_time(),
-    #         "text":"message has reached the server",
-    #         "error":"",
-    #         "id":message_id
-    #     }
-    #     self.send_server_msg(message)
-    #     return None 
-    
-        
-    def send(self, msg_len_formatted, msg_formatted,addr, is_account): #? bytes, bytes, [string or arr], bool<- -> None
-        if is_account == True:# if parameter specified is account 
+        return None
+
+    # ? bytes, bytes, [string or arr], bool<- -> None
+    def send(self, msg_len_formatted, msg_formatted, addr, is_account):
+        if is_account == True:  # if parameter specified is account
             if self.server.is_online(addr):
-                connection = self.server.get_conn(addr) # if account is passed as a param
+                # if account is passed as a param
+                connection = self.server.get_conn(addr)
             else:
-                self.server.update_deliv_queue(msg_formatted)#! remove 
-                return 
+                # self.server.update_deliv_queue(msg_formatted)#! remove
+                return None
         else:  # for beginning we will just ignore that message hasn't been sent to user if its
-            # if connection is already in params 
+            # if connection is already in params
             connection = addr
         connection.send(msg_len_formatted)
         connection.send(msg_formatted)
-        return None 
+        return None
 
-    def send_login_affirmation(self, account_name): # ? string<- -> None 
+    def send_login_affirmation(self, account_name):  # ? string<- -> None
         print(f"Sending login affirmation to {account_name}")
         message = {
             "command": "-login_accept:",
@@ -90,69 +74,68 @@ class Sender:  # class is responsible for sending messages to other users
             "from": "SERVER",
             "to": account_name,
             "error": "",
-            "text":f"Successfully logged in as {account_name}"
+            "text": f"Successfully logged in as {account_name}"
         }
 
         self.send_server_msg(message)
-        return None 
+        return None
 
     # doesn't work because we don't have account value, if login is unsuccessfult
-    def send_login_rejection(self, connection, error): #? arr, string <- -> None 
+    def send_login_rejection(self, connection, error):  # ? arr, string <- -> None
         message = {
             "command": "-login_reject:",
             "time": self.server.get_time(),
             "from": "SERVER",
-            "to":"unknown",
+            "to": "unknown",
             "error": error,
             "delay": 0
-            }
-        message_formatted = self.parser.format_message(message,to_client=True)
+        }
+        message_formatted = self.parser.format_message(message, to_client=True)
         message_len = len(message_formatted)
-        message_len_formatted = self.parser.format_message_length(message_len,to_client=True)
-        self.send(message_len_formatted,message_formatted,connection,is_account=False)
-        return None 
-    
-    def convert_num(self,val):#?(int)->bool 
-        if val ==1:
+        message_len_formatted = self.parser.format_message_length(
+            message_len, to_client=True)
+        self.send(message_len_formatted, message_formatted,
+                  connection, is_account=False)
+        return None
+
+    def convert_num(self, val):  # ?(int)->bool
+        if val == 1:
             return True
         else:
             return False
-    
-    def send_log_msg(self,message,account):#?(arr)->None
+
+    def send_log_msg(self, message, account):  # ?(arr)->None
         message_id = message[0]
         sender = message[1]
         text = message[2]
-        date = message[3]
-        is_delivered = self.convert_num(message[4])
-        is_read = self.convert_num(message[5])
+        date = message[3] #! rework 
+        is_read = self.convert_num(message[4])
         message_obj = {
-            "to":account,
-            "from":"SERVER",
-            "text":text,
-            "id":message_id,
-            "command":"-display_chat:",
-            "is_delivered":is_delivered,
-            "is_read":is_read,
-            "sender":sender,
-            "error":""
+            "to": account,
+            "from": "SERVER",
+            "text": text,
+            "id": message_id,
+            "command": "-display_chat:",
+            "is_read": is_read,
+            "sender": sender,
+            "error": ""
         }
-        print("sending message ",message)
         self.send_server_msg(message_obj)
-        return None 
-        
-    def send_account_status(self,message):
+        return None
+
+    def send_account_status(self, message):
         account = message["text"]
         is_existent = self.server.is_existent(account)
         is_online = self.server.is_online(account) if is_existent else False
         message_obj = {
-            "to":message["from"],
-            "time":self.server.get_time(),
-            "from":"SERVER",
-            "error":"",
-            "is_online":is_online,
-            "is_existent":is_existent,
-            "command":"-account_status:"
+            "to": message["from"],
+            "time": self.server.get_time(),
+            "from": "SERVER",
+            "error": "",
+            "is_online": is_online,
+            "is_existent": is_existent,
+            "command": "-account_status:"
         }
-        
+
         self.send_server_msg(message_obj)
-        return None 
+        return None

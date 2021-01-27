@@ -1,5 +1,5 @@
 import socket
-import threading
+from threading import Timer,Thread
 import time
 import json
 import os
@@ -11,7 +11,7 @@ class Client:
     def __init__(self):
         self.SERVERPORT = 5050
         self.HEADERSIZE = 64
-        self.SERVERIP = "192.168.1.191"
+        self.SERVERIP = "localhost"
         self.SERVERADDR = (self.SERVERIP, self.SERVERPORT)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # flag that indicates whether we have to send message with current state
@@ -46,7 +46,7 @@ class Client:
                 self.exit_client()
             else:
                 self.login_process(self.sock)
-                data_thread = threading.Thread(
+                data_thread = Thread(
                     target=self.receive_data, args=(self.sock,))
                 data_thread.start()
                 # need to launch gui code in the same thread
@@ -79,40 +79,50 @@ class Client:
             is_server_message = self.is_from_server(decoded_message)
             if is_server_message:  # we don't send notifications for server messages
                 self.execute_server_generated_commands(decoded_message)
-                print(decoded_message,"-message received")
+                print(decoded_message, "-message received")
             else:
-                print(decoded_message,"-message received")
+                print(decoded_message, "-message received")
                 self.display_message(decoded_message)
                 self.deliv_response(decoded_message)
         self.exit_client()
 
-    def display_message(self,decoded_message):#?(dict)->None 
+    def display_message(self, decoded_message):  # ?(dict)->None
         if "sender" in decoded_message.keys():
-            param  = "sender"
+            param = "sender"
+            print("sender param")
         else:
             param = "from"
-        if decoded_message[param]!=self.chat_account_status["account"]: 
-            print("decoded message from !=self.account")
+        # if decoded_message[param]!=self.chat_account_status["account"]:
+        #     print(decoded_message[param],"-param",self.chat_account_status["account"],"-chat_account")
+        #     print("decoded message from !=self.account")
+        #     return None
+        # else:
+        #     text = decoded_message["text"]
+
+        #     status_vals = self.get_status_values(decoded_message)
+        #     self.messages_to_display.append([text,status_vals])
+        #     return None
+        val = decoded_message[param]
+        if val == self.chat_account_status["account"] or val == self.account:
+            text = decoded_message["text"]
+            status_vals = self.get_status_values(decoded_message)
+            self.messages_to_display.append([text, status_vals])
             return None
         else:
-            text = decoded_message["text"]
-            
-            status_vals = self.get_status_values(decoded_message)
-            self.messages_to_display.append([text,status_vals])
+            print("Message irrelevant")
             return None
 
-    def get_status_values(self,decoded_message):
+    def get_status_values(self, decoded_message):
         key_arr = decoded_message.keys()
         sender = decoded_message["sender"] if "sender" in key_arr else decoded_message["from"]
-        from_this_account = True if sender ==self.account else False
+        from_this_account = True if sender == self.account else False
         if from_this_account and "is_delivered" in key_arr:
             is_delivered = decoded_message["is_delivered"]
             is_read = decoded_message["is_read"]
-            return [from_this_account,is_delivered,is_read]
+            return [from_this_account, is_delivered, is_read]
         else:
             return [from_this_account]
-        
-    
+
     def execute_server_generated_commands(self, msg):  # ? (obj)->None
         command = msg["command"]
         error = msg["error"]
@@ -122,29 +132,29 @@ class Client:
             self.logged_in = True
             obtained_account_val = msg["to"]
             self.account = obtained_account_val
-        elif command == "-display_chat:":  
+        elif command == "-display_chat:":
             print("to display message")
             self.display_message(msg)
         elif command == "-usr_deliv_success:":
             message_id = msg["id"]
             sender = msg["text"]
-            if sender ==self.chat_account_status["account"]:
+            if sender == self.chat_account_status["account"]:
                 self.gui.highlight_message(message_id, first_star=False)
-                
+
         elif command == "-account_status:":
             self.update_chat_account_status(msg)
         return None
 
-    def is_this_account(self,account):
+    def is_this_account(self, account):
         if account == self.account:
             return True
         else:
-            return False 
-    
+            return False
+
     def deliv_response(self, message):  # ? (obj)->None
         sender = message["from"]
-        if sender!=self.chat_account_status["account"]:
-            return None 
+        if sender != self.chat_account_status["account"]:
+            return None
         message_id = message["id"]
         response_message = {
             "from": self.account,
@@ -191,7 +201,7 @@ class Client:
         account_arr.sort()
         account_string = f"[{account_arr[0]}|{account_arr[1]}]"
         return account_string
-    
+
     def display_chat(self):
         chat_string = self.get_chat_string()
         message_obj = {

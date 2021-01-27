@@ -67,7 +67,7 @@ font: 20pt &quot;Arial&quot;;</string>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color:#d8d8d8</string>
+    <string notr="true">background-color:#74B4E0</string>
    </property>
    <property name="widgetResizable">
     <bool>false</bool>

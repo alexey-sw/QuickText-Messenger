@@ -1,6 +1,6 @@
 import socket
 from sqlite3.dbapi2 import Date
-import threading
+from threading import Timer,Thread
 import time
 import os
 import subprocess
@@ -24,10 +24,7 @@ class Executor:
     def execute(self, message):
         message_command = message["command"]
         if message_command == "-s:":
-            # ! delay feature will be implemented here
-            self.user_db.log_message(message)
-            #! fix bug when user sends messages to himself
-            sender.send_msg(message)
+            self.server.process_message(message)
         elif message_command == "-delivery_confirmed:":
             print("delivery confirmed")
             sender.send_client_deliv_notif(message)
@@ -43,7 +40,7 @@ class Server:
         self.online_count = 0
         self.HEADERSIZE = 64
         self.PORT = 5050
-        self.IP = "192.168.1.191"  # changed for local for the time being
+        self.IP = "localhost"  # changed for local for the time being
         self.ADDR = (self.IP, self.PORT)
         self.encoding = "utf-8"
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -64,7 +61,6 @@ class Server:
                 del self.connections[i]
                 break
         self.db.disconnect_user(user_account)
-        # self.db.update_value(MAIN_TB, user_account, "is_online", 0)
         return None
 
     def login_client(self, conn):  # ? arr<-  ->array: [string,bool,string ]
@@ -77,15 +73,13 @@ class Server:
         is_valid, error = self.account_validity_check(account_name)
         return [account_name, is_valid, error]
 
-    def send_unread_messages(self, message_arr):  # ? arr of string  <- -> None
-        print("sending unsent messages ")
-        if message_arr:
-            for message in message_arr:
-                message = parser.json_to_obj(message)
-                sender.send_msg(message)
-        else:
-            pass
-        return
+    def process_message(self, message):
+        delay = float(message["delay"])
+        log_timer = Timer(delay, self.user_db.log_message, args=(message,))
+        message_timer = Timer(delay, sender.send_msg, args=(message,))
+        log_timer.start()
+        message_timer.start()
+        return None
 
     def send_chat_log(self, message):  # ?(dict)->None
         account_to = message["from"]
@@ -98,23 +92,6 @@ class Server:
         else:
             print("No messages for chat: ", table_name)
 
-        return None
-
-    def process_unsent_messages(self, account):  # ? (string)->None
-        unsent_messages = self.db.get_unsent_messages(account)
-        print("sending these messages: ", unsent_messages, " to ", account)
-        self.send_unread_messages(unsent_messages)
-        self.db.delete_unsent_messages(account)
-        return None
-
-    def update_deliv_queue(self, message):  # ? bin<- -> return None
-        # ! converting from bin to json
-        message = parser.format_message(message, to_client=False)
-        recipient_account = message["to"]
-        print("updating deliv queue")
-        date = message["time"]
-        message = parser.object_to_json(message)
-        self.db.update_unsent_messages(message, recipient_account, date)
         return None
 
     # returns index of our user in array
@@ -169,7 +146,6 @@ class Server:
                 print(f"LoginProcessError: {error}")
                 sender.send_login_rejection(conn, error)
                 continue
-        self.process_unsent_messages(account_name)
         self.db.get_tbl("MAIN_TABLE")
         while True:
             try:
@@ -184,10 +160,7 @@ class Server:
                 break
             msg_length = parser.format_message_length(msg_length, False)
             message = conn.recv(msg_length)
-
             unwrpt_message = parser.format_message(message, False)
-            # if unwrpt_message["command"] not in self.status_commands:
-            #     sender.send_server_deliv_notif(unwrpt_message)
             self.cmd_executor.execute(unwrpt_message)
 
         return None
@@ -196,17 +169,16 @@ class Server:
         while True:
             conn, addr = self.sock.accept()
             print(addr, "connected")
-            user_thread = threading.Thread(
+            user_thread = Thread(
                 target=self.handle_client, args=(conn, addr))
             user_thread.start()
 
-   
     def start_command_prompt(self):
         def cmd_prompt():
             command = input(">")
             if command == "r":
                 self.kill_server()
-        prompt_thread = threading.Thread(target=cmd_prompt)
+        prompt_thread = Thread(target=cmd_prompt)
         prompt_thread.start()
 
     def start(self):  # ? ..<-  -> None
