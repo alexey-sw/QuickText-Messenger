@@ -1,30 +1,5 @@
-# User db will have n tables 
-# each table represents a chat : current_user - some user 
-
-# each row represents new message 
-#? columns: MESSAGE_ID(int autoincrement) MESSAGE(text) DATE(string) IS_DELIVERED(bool) IS_READ(bool) 
-#! we don't read value IS_DELIVERED and IS_READ if message has been sent from another account 
-#! message column contains plaintext only 
-
-#Algorithm for chat change:
-# anytime user click select:
-# if value is different 
-# we look for table  CHAT_WITH_(ACCOUNT_NAME)
-# if there is no such table we create one 
-# if there is such table, then we retrieve all messages and append them to scrollArea and mark them according to IS_DELIVERED and IS_READ flag
-
-#Algorithm for message delivery:
-#if message is delivered from client -> check that select value is the same 
-#if select value is the same : display message, write message into db, 
-# otherwise write message into db
-
-#if message is from server-> change message status 
-
-
-#! user will not be able to log in under the same account on different devices 
 import sqlite3
 import time
-#! fix it 
 DEFAULT_TABLE = "sqlite_sequence"
 
 #Todo: change message status when message is read, remove unsent messages 
@@ -49,8 +24,6 @@ class User_db:
         self.connection.commit()
         table_array = list(map(lambda elem:"["+elem[0]+"]",table_array))
         return table_array
-    
-    
     
     #* edit operations 
     def log_message(self,message):#?(string,dict)->None
@@ -103,6 +76,12 @@ class User_db:
             print(row)
         return None 
     
+    def change_message_status(self,message):
+        table_name = self.compose_table_name(message["from"],message["to"])
+        message_id = message["id"]        
+        
+        pass
+    
     def create_table(self,table_name):#?(string) ->Bool
         cursor = self.connection.cursor()
         
@@ -131,14 +110,16 @@ class User_db:
             pass
         return table_name
     
-            
-
+    def change_status(self,table,id):
+        cursor = self.connection.cursor()
+        cursor.execute("UPDATE {} SET IS_READ=1 WHERE MESSAGE_ID".format(table))
+        self.connection.commit()
+        self.print_tbl(table)
+        return 
+    
     def is_such_table(self,table):#? (string) -> Bool
         if not "[" or  not "]" in table:
-            print(table,"tablename line 130")
             table = f"[{table}]"
-        print(table,"tablename line 132")
-
         table_array =self.get_all_tbl()
         if table in table_array:
             return True 
@@ -149,41 +130,6 @@ class User_db:
         table_name = self.compose_table_name(account_1,account_2)
         self.create_table(table_name)
         return None 
-    
-    
-    
-        
+     
 def get_time():
     return time.ctime()
-# if __name__=="__main__":
-#     db = User_db()
-#     db.setup()
-#     alph = "abcdefghigklmnopqrstuvwxyz"
-#     for i in range(20):
-#         response_message = {
-#                 "from":alph[1],
-#                 "text": "",
-#                 "to": alph[4],
-#                 "time": get_time(),
-#                 "command": "-delivery_confirmed:",
-#                 "delay": 0,
-#                 "id":i
-#             }
-#         db.add_to_table(response_message)
-
-#     for i in range(20):
-#         response_message = {
-#                 "from":alph[i],
-#                 "text": "",
-#                 "to": alph[i+1],
-#                 "time": get_time(),
-#                 "command": "-delivery_confirmed:",
-#                 "delay": 0,
-#                 "id":i
-#             }
-#         db.add_to_table(response_message)
-#     table_array = db.get_all_tbl()
-#     for table in table_array:
-#         db.print_tbl(table)
-#         print("messages from table: ",table)
-#     print(db.is_such_table("[a|c]"))

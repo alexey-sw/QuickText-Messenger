@@ -1,12 +1,9 @@
-import PyQt5
 from PyQt5.QtWidgets import QApplication, QFrame
 from PyQt5.QtWidgets import QDialog, QLabel, QGridLayout
 from PyQt5 import uic
-from PyQt5.QtCore import QSaveFile, QTimer, qInstallMessageHandler
-from PyQt5 import QtCore
+from PyQt5.QtCore import  QTimer
 import sys
-from threading import Timer,
-from time import sleep 
+from threading import Timer
 # TODO: design decent message styling
 # Todo: display time info for message
 # TODO: send messages with enter button
@@ -64,12 +61,15 @@ class Gui():
             text = new_message_matrix[0]
             status_vals = new_message_matrix[1]
             #!rewrite
-            if len(status_vals)==1: #! in case it wasn't message sent from this account 
+            print(status_vals,"status values")
+            if len(status_vals)==1:  #! in case it wasn't message sent from this account 
                 self.window.create_message_tab(
                     text, from_this_account=False)
             else:
                 is_read = status_vals[1]
                 self.window.create_message_tab(text,from_this_account = True,is_read = is_read)
+                self.highlight_message(self.window.new_msg_ind-1)
+                
                 
     def setup_qtimer(self):  # ? None < -- --> None
         self.timer.setInterval(1000)  # check message and status
@@ -119,7 +119,7 @@ class Main_Window(QDialog):
 
         self.another_account_message_color = "#FFFFFF" #white color 
         self.this_account_unread_message_color = "#DCDCDC"# gray
-        self.this_account_read_message_color = "#EFFDDE" # light_green
+        self.this_account_read_message_color = "#DCFBB7" # light_green
         self.select_button_value = ""
         self.new_msg_ind = 0
 
@@ -253,6 +253,6 @@ class Main_Window(QDialog):
 
     def highlight_message_tab(self, ind):
         message_widget = self.layout.itemAtPosition(ind, 0).widget()
-        new_color = "#000080" #!read_message_color
+        new_color = self.this_account_read_message_color #!read_message_color
         message_widget.setStyleSheet(f"background-color:{new_color}")
         return None

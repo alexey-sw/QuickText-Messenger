@@ -92,16 +92,6 @@ class Client:
             print("sender param")
         else:
             param = "from"
-        # if decoded_message[param]!=self.chat_account_status["account"]:
-        #     print(decoded_message[param],"-param",self.chat_account_status["account"],"-chat_account")
-        #     print("decoded message from !=self.account")
-        #     return None
-        # else:
-        #     text = decoded_message["text"]
-
-        #     status_vals = self.get_status_values(decoded_message)
-        #     self.messages_to_display.append([text,status_vals])
-        #     return None
         val = decoded_message[param]
         if val == self.chat_account_status["account"] or val == self.account:
             text = decoded_message["text"]
@@ -116,10 +106,9 @@ class Client:
         key_arr = decoded_message.keys()
         sender = decoded_message["sender"] if "sender" in key_arr else decoded_message["from"]
         from_this_account = True if sender == self.account else False
-        if from_this_account and "is_delivered" in key_arr:
-            is_delivered = decoded_message["is_delivered"]
+        if from_this_account:
             is_read = decoded_message["is_read"]
-            return [from_this_account, is_delivered, is_read]
+            return [from_this_account, is_read]
         else:
             return [from_this_account]
 
@@ -136,10 +125,12 @@ class Client:
             print("to display message")
             self.display_message(msg)
         elif command == "-usr_deliv_success:":
+            
             message_id = msg["id"]
             sender = msg["text"]
+            print("delivery response from user: ",sender )
             if sender == self.chat_account_status["account"]:
-                self.gui.highlight_message(message_id, first_star=False)
+                self.gui.highlight_message(message_id)
 
         elif command == "-account_status:":
             self.update_chat_account_status(msg)
@@ -152,8 +143,11 @@ class Client:
             return False
 
     def deliv_response(self, message):  # ? (obj)->None
+        print("message delivered")
         sender = message["from"]
+        print(sender,message["from"]," sender, messagefrom")
         if sender != self.chat_account_status["account"]:
+            print("sender!=self.chat_account_status")
             return None
         message_id = message["id"]
         response_message = {
@@ -165,6 +159,7 @@ class Client:
             "delay": 0,
             "id": message_id
         }
+        print("sending deliv response to ",sender)
         self.send_deliv_response(response_message)
         return None
 
@@ -250,8 +245,7 @@ class Client:
 
     def send_deliv_response(self, msg):  # ? object <- -> None
         msg_formatted = parser.format_message(msg, to_server=True)
-        msg_len_formatted = parser.format_message_length(
-            len(msg_formatted), to_server=True)
+        msg_len_formatted = parser.format_message_length(len(msg_formatted), to_server=True)
         self.sock.send(msg_len_formatted)
         self.sock.send(msg_formatted)
         return None

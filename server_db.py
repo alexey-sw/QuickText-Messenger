@@ -19,7 +19,6 @@ class DB_Manager:
         try:
             if self.to_drop:
                 cursor.execute('''DROP TABLE MAIN_TABLE''')
-                cursor.execute('DROP TABLE UNSENT_MESSAGES')
         except:
             pass
         cursor.execute('''CREATE TABLE MAIN_TABLE
@@ -28,46 +27,13 @@ class DB_Manager:
                                 account_name TEXT,
                                 is_online INTEGER
                             )''')
-        cursor.execute('''CREATE TABLE UNSENT_MESSAGES
-                            (
-                                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                message_text TEXT,
-                                recipient_account TEXT,
-                                date TEXT
-                            )''')
         self.connection.commit()
         self.test_fill()
         self.get_tbl("MAIN_TABLE")
         return
 
-    def update_unsent_messages(self, message_text, recipient_account, date):
-        cursor = self.connection.cursor()
-        cursor.execute("INSERT INTO UNSENT_MESSAGES(message_text,recipient_account,date) VALUES(?,?,?)",
-                       (message_text, recipient_account, date))
-        self.connection.commit()
-        return
-
-    def get_unsent_messages(self, account_name):
-        cursor = self.connection.cursor()
-        arr = cursor.execute(
-            "SELECT * FROM UNSENT_MESSAGES WHERE recipient_account==?", account_name).fetchall()
-        arr = list(map(lambda elem: elem[1], arr))
-        self.connection.commit()
-        return arr
-    # deletes all messages that were for some account
-
-    def delete_unsent_messages(self, account_name):
-        cursor = self.connection.cursor()
-
-        cursor.execute(
-            "DELETE FROM UNSENT_MESSAGES WHERE recipient_account==?", (account_name))
-        self.connection.commit()
-        # self.get_tbl("UNSENT_MESSAGES")
-        return
-
     def test_fill(self):  # ? None <-- -->None
         cursor = self.connection.cursor()
-
         for letter in alph:
             cursor.execute(
                 '''INSERT INTO {}(account_name,is_online) VALUES (?,?)'''.format("MAIN_TABLE"), (letter, 0))
@@ -86,8 +52,7 @@ class DB_Manager:
             'UPDATE {} SET {}={} WHERE account_name==?'.format(table, column, value), account_name)
         self.connection.commit()
         return
-    #!sqlite3.ProgrammingError:
-    #!Incorrect number of bindings supplied. The current statement uses 1, and there are 2 supplied.
+    
 
     def is_existent(self, account_name):  # ? string<-- --> bool
         cursor = self.connection.cursor()
@@ -117,21 +82,3 @@ class DB_Manager:
                 return False
         self.connection.commit()
         del cursor
-
-
-# manager = DB_Manager()
-# manager.setup()
-
-# accounts = "abcdef"
-# string = "slakdajsfdkjasdfljlasdfjlawjelkjds"
-# for i in range(100):
-#     manager.update_unsent_messages(string[0:randint(
-#         1, len(string)-2)], accounts[randint(0, len(accounts)-1)], "hello")
-# print(manager.get_unsent_messages("a"))
-# print(manager.is_existent("asdfasdfas"),"is existent")
-
-# print(manager.delete_unsent_messages("d"))
-# print(manager.get_unsent_messages("d"))
-
-
-#! MESSAGE DELETION WORKS PROPERLY

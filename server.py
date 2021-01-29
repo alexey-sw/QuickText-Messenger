@@ -3,17 +3,12 @@ from sqlite3.dbapi2 import Date
 from threading import Timer,Thread
 import time
 import os
-import subprocess
 from server_sender import Sender
 from server_parser import Parser
 from server_db import DB_Manager
 from user_db import *
 
-#! server doesn't parse commands, they come clearly defined  with the message
-
-
-#! need to rework unread messages sending
-# TODO: we don't have unsent messages anymore, all messages go to chat db
+#Todo: rework status alternation
 
 class Executor:
     def __init__(self, server):
@@ -28,6 +23,7 @@ class Executor:
         elif message_command == "-delivery_confirmed:":
             print("delivery confirmed")
             sender.send_client_deliv_notif(message)
+            self.user_db.change_message_status(message)
         elif message_command == "-check_status:":
             sender.send_account_status(message)
         elif message_command == "-display_chat:":
@@ -44,9 +40,6 @@ class Server:
         self.ADDR = (self.IP, self.PORT)
         self.encoding = "utf-8"
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.status_commands = [
-            "-delivery_confirmed:", "-d:", "-check_status:", "-display_chat:"]
-        self.delivery_queue = []  # * list of objects whose messages have to be delivered
         self.db = DB_Manager()
         self.connections = []  # only currently available users
         self.user_db = User_db()
@@ -154,9 +147,6 @@ class Server:
                 print(account_name, "disconnected")
                 self.disconnect_user(account_name)
                 self.db.get_tbl("MAIN_TABLE")
-                if self.user_db.is_such_table("a|a"):
-                    self.user_db.drop_tbl("a|a")
-                print("line 181, table dropped")
                 break
             msg_length = parser.format_message_length(msg_length, False)
             message = conn.recv(msg_length)
