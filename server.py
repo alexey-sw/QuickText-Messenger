@@ -99,7 +99,6 @@ class Server:
         return indx
 
     def is_online(self, account_name):  # ? string<- -> bool
-        print("checking if ",account_name," is online")
         ans = self.db.is_online(account_name)
         return ans
 

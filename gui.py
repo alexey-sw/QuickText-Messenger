@@ -68,7 +68,7 @@ class Gui():
             else:
                 is_read = status_vals[1]
                 self.window.create_message_tab(text,from_this_account = True,is_read = is_read)
-                self.highlight_message(self.window.new_msg_ind-1)
+                self.highlight_message(self.window.new_msg_ind)
                 
                 
     def setup_qtimer(self):  # ? None < -- --> None
