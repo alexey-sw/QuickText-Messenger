@@ -1,5 +1,5 @@
 import socket
-from threading import Timer,Thread
+from threading import Timer, Thread
 import time
 import json
 import os
@@ -83,20 +83,17 @@ class Client:
             else:
                 print(decoded_message, "-message received")
                 self.display_message(decoded_message)
-                self.deliv_response(decoded_message)
         self.exit_client()
 
     def display_message(self, decoded_message):  # ?(dict)->None
-        if "sender" in decoded_message.keys():
-            param = "sender"
-            print("sender param")
-        else:
-            param = "from"
+        param = "sender" if "sender" in decoded_message.keys() else "from"
         val = decoded_message[param]
-        if val == self.chat_account_status["account"] or val == self.account:
+        if val == self.chat_account_status["account"] or val==self.account:
             text = decoded_message["text"]
             status_vals = self.get_status_values(decoded_message)
             self.messages_to_display.append([text, status_vals])
+            if val != self.account:
+                self.form_deliv_response(decoded_message)
             return None
         else:
             print("Message irrelevant")
@@ -125,10 +122,10 @@ class Client:
             print("to display message")
             self.display_message(msg)
         elif command == "-usr_deliv_success:":
-            
+
             message_id = msg["id"]
             sender = msg["text"]
-            print("delivery response from user: ",sender )
+            print("delivery response from user: ", sender)
             if sender == self.chat_account_status["account"]:
                 self.gui.highlight_message(message_id)
 
@@ -142,13 +139,8 @@ class Client:
         else:
             return False
 
-    def deliv_response(self, message):  # ? (obj)->None
-        print("message delivered")
-        sender = message["from"]
-        print(sender,message["from"]," sender, messagefrom")
-        if sender != self.chat_account_status["account"]:
-            print("sender!=self.chat_account_status")
-            return None
+    def form_deliv_response(self, message):  # ? (obj)->None
+        sender = message["sender"] if "sender" in message.keys() else message["from"]
         message_id = message["id"]
         response_message = {
             "from": self.account,
@@ -159,8 +151,8 @@ class Client:
             "delay": 0,
             "id": message_id
         }
-        print("sending deliv response to ",sender)
-        self.send_deliv_response(response_message)
+        print("sending deliv response to ", sender)
+        self.send_form_deliv_response(response_message)
         return None
 
     def login_process(self, socket):  # ?(obj) -> None
@@ -243,9 +235,10 @@ class Client:
             print(msg)
         return None
 
-    def send_deliv_response(self, msg):  # ? object <- -> None
+    def send_form_deliv_response(self, msg):  # ? object <- -> None
         msg_formatted = parser.format_message(msg, to_server=True)
-        msg_len_formatted = parser.format_message_length(len(msg_formatted), to_server=True)
+        msg_len_formatted = parser.format_message_length(
+            len(msg_formatted), to_server=True)
         self.sock.send(msg_len_formatted)
         self.sock.send(msg_formatted)
         return None

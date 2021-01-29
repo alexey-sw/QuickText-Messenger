@@ -15,8 +15,6 @@ class Sender:  # class is responsible for sending messages to other users
         recipient_account = msg["to"]
         if sender == recipient_account:
             return None
-
-        # delay = msg["delay"]
         msg_formatted = self.parser.format_message(msg, to_client=True)
         message_len = len(msg_formatted)
         message_len_formatted = self.parser.format_message_length(
@@ -53,6 +51,7 @@ class Sender:  # class is responsible for sending messages to other users
     # ? bytes, bytes, [string or arr], bool<- -> None
     def send(self, msg_len_formatted, msg_formatted, addr, is_account):
         if is_account == True:  # if parameter specified is account
+            
             if self.server.is_online(addr):
                 # if account is passed as a param
                 connection = self.server.get_conn(addr)

@@ -21,9 +21,7 @@ class Executor:
         if message_command == "-s:":
             self.server.process_message(message)
         elif message_command == "-delivery_confirmed:":
-            print("delivery confirmed")
             sender.send_client_deliv_notif(message)
-            self.user_db.change_message_status(message)
         elif message_command == "-check_status:":
             sender.send_account_status(message)
         elif message_command == "-display_chat:":
@@ -78,6 +76,7 @@ class Server:
         account_to = message["from"]
         table_name = message["text"]
         message_array = self.user_db.retrive_messages(table_name)
+        
         if message_array:
             for logged_message in message_array:
                 print(logged_message)
@@ -100,6 +99,7 @@ class Server:
         return indx
 
     def is_online(self, account_name):  # ? string<- -> bool
+        print("checking if ",account_name," is online")
         ans = self.db.is_online(account_name)
         return ans
 

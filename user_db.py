@@ -59,6 +59,8 @@ class User_db:
         cursor = self.connection.cursor()
         if self.is_such_table(table):
             message_matrix = cursor.execute("""SELECT * FROM {}""".format(table)).fetchall()
+            self.connection.commit()
+            self.change_message_arr_status(table)
             return message_matrix
         else:
             return None 
@@ -76,15 +78,17 @@ class User_db:
             print(row)
         return None 
     
-    def change_message_status(self,message):
-        table_name = self.compose_table_name(message["from"],message["to"])
-        message_id = message["id"]        
+    def change_message_arr_status(self,table):#? (string)->None
+        cursor = self.connection.cursor()
+        cursor.execute("UPDATE {} SET IS_READ=1 WHERE IS_READ = 0".format(table))
+        self.connection.commit()
+        print("Message_arr_status changed: ")
+        self.print_tbl(table)
         
-        pass
+        return None 
     
     def create_table(self,table_name):#?(string) ->Bool
         cursor = self.connection.cursor()
-        
         cursor.execute("""CREATE TABLE {}(
             MESSAGE_ID INTEGER PRIMARY KEY,
             SENDER TEXT,
@@ -112,7 +116,7 @@ class User_db:
     
     def change_status(self,table,id):
         cursor = self.connection.cursor()
-        cursor.execute("UPDATE {} SET IS_READ=1 WHERE MESSAGE_ID".format(table))
+        cursor.execute("UPDATE {} SET IS_READ=1 WHERE MESSAGE_ID = {}".format(table,id))
         self.connection.commit()
         self.print_tbl(table)
         return 
