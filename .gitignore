@@ -6,3 +6,4 @@ __pycache__
 test2.py
 serv.db
 user_db.db
+gui_test.py

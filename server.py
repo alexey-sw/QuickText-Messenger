@@ -1,29 +1,47 @@
 import socket
 from sqlite3.dbapi2 import Date
-import threading
+from threading import Timer,Thread
 import time
-import codecs
+import os
 from server_sender import Sender
 from server_parser import Parser
 from server_db import DB_Manager
-from queue import Queue
-#! server doesn't parse commands, they come clearly defined  with the message
-# TODO: implement multithreading with sqlite3
+from user_db import *
+
+#Todo: rework status alternation
+
+class Executor:
+    def __init__(self, server):
+        self.server = server
+        self.user_db = server.user_db
+        pass
+
+    def execute(self, message):
+        message_command = message["command"]
+        if message_command == "-s:":
+            self.server.process_message(message)
+        elif message_command == "-delivery_confirmed:":
+            sender.send_client_deliv_notif(message)
+        elif message_command == "-check_status:":
+            sender.send_account_status(message)
+        elif message_command == "-display_chat:":
+            self.server.send_chat_log(message)
+        return None
+
 
 class Server:
     def __init__(self):
         self.online_count = 0
         self.HEADERSIZE = 64
         self.PORT = 5050
-        self.IP = "192.168.1.191"  # changed for local for the time being
+        self.IP = "localhost"  # changed for local for the time being
         self.ADDR = (self.IP, self.PORT)
         self.encoding = "utf-8"
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.status_commands = [
-            "-delivery_confirmed:", "-d:", "-check_status:"]
-        self.delivery_queue = []  # * list of objects whose messages have to be delivered
         self.db = DB_Manager()
-        self.connections = [] # only currently available users
+        self.connections = []  # only currently available users
+        self.user_db = User_db()
+        self.cmd_executor = Executor(self)
 
     def get_time(self):  # ? ..<-   -> string
         return time.ctime()
@@ -34,24 +52,7 @@ class Server:
                 del self.connections[i]
                 break
         self.db.disconnect_user(user_account)
-        # self.db.update_value(MAIN_TB, user_account, "is_online", 0)
-        return None 
-
-    def execute_client_command(self, message):  # ? object<- -> None
-        message_command = message["command"]
-        recipient_account = message["to"]
-        if message_command == "-s:":
-            if self.is_existent(recipient_account):
-                sender.send_msg(message)
-            else:
-                sender.send_deliv_error(message)  # ! remove this shit
-        elif message_command == "-info:":
-            pass
-        elif message_command == "-delivery_confirmed:":
-            sender.send_client_deliv_notif(message)
-        elif message_command == "-check_status:":
-            sender.send_account_status(message)
-        return None 
+        return None
 
     def login_client(self, conn):  # ? arr<-  ->array: [string,bool,string ]
         login_message_length = conn.recv(self.HEADERSIZE)
@@ -63,37 +64,31 @@ class Server:
         is_valid, error = self.account_validity_check(account_name)
         return [account_name, is_valid, error]
 
-    def send_unread_messages(self, message_arr):  # ? arr of string  <- -> None
-        print("sending unsent messages ")
-        if message_arr:
-            for message in message_arr:
-                print(type(message))
-                message = parser.json_to_obj(message)
-                sender.send_msg(message)
-        else:
-            pass
-        return
+    def process_message(self, message):
+        delay = float(message["delay"])
+        log_timer = Timer(delay, self.user_db.log_message, args=(message,))
+        message_timer = Timer(delay, sender.send_msg, args=(message,))
+        log_timer.start()
+        message_timer.start()
+        return None
 
-    def process_unsent_messages(self,account):#? (string)->None
-        unsent_messages = self.db.get_unsent_messages(account)
-        print("sending these messages: ", unsent_messages, " to ", account)
-        self.send_unread_messages(unsent_messages)
-        self.db.delete_unsent_messages(account)
-        return None 
-    
-    def update_deliv_queue(self, message):  # ? bin<- -> return None
-        # ! converting from bin to json
-        message = parser.format_message(message, to_client=False)
-        recipient_account = message["to"]
-        print("updating deliv queue")
-        date = message["time"]
-        message = parser.object_to_json(message)
-        self.db.update_unsent_messages(message, recipient_account, date)
-        return None 
+    def send_chat_log(self, message):  # ?(dict)->None
+        account_to = message["from"]
+        table_name = message["text"]
+        message_array = self.user_db.retrive_messages(table_name)
+        
+        if message_array:
+            for logged_message in message_array:
+                print(logged_message)
+                sender.send_log_msg(logged_message, account_to)
+        else:
+            print("No messages for chat: ", table_name)
+
+        return None
 
     # returns index of our user in array
-    def add_to_connections(self,connection, account_name):  #? (obj,string)->None
-        self.connections.append([account_name,connection])
+    def add_to_connections(self, connection, account_name):  # ? (obj,string)->None
+        self.connections.append([account_name, connection])
         self.db.connect_user(account_name)
         # # self.db.update_value(MAIN_TB, account_name, "is_online", 1)
         return None
@@ -117,7 +112,14 @@ class Server:
                 return [True, ""]
         return [False, f"Account '{account_name}' doesn't exist"]
 
-    def is_existent(self, account_name):  # ! delete check_if_connected function
+    def get_conn(self, account_name):  # ? (string) -> object
+        for elem in self.connections:  # ! user cannot be offline
+            if elem[0] == account_name:
+                return elem[1]
+        print(f"No account named '{account_name}' has been found!")
+        return 0
+
+    def is_existent(self, account_name):  # ? (string) -> bool
         ans = self.db.is_existent(account_name)
         return ans
 
@@ -129,14 +131,13 @@ class Server:
                 conn)  # error is "" if login was successful
             if is_valid:
                 print(f"{addr} has been connected as {account_name}")
-                self.add_to_connections(conn,account_name)
+                self.add_to_connections(conn, account_name)
                 sender.send_login_affirmation(account_name)
                 break
             else:
                 print(f"LoginProcessError: {error}")
                 sender.send_login_rejection(conn, error)
                 continue
-        self.process_unsent_messages(account_name)
         self.db.get_tbl("MAIN_TABLE")
         while True:
             try:
@@ -148,27 +149,37 @@ class Server:
                 break
             msg_length = parser.format_message_length(msg_length, False)
             message = conn.recv(msg_length)
-
             unwrpt_message = parser.format_message(message, False)
+            self.cmd_executor.execute(unwrpt_message)
 
-            if unwrpt_message["command"] not in self.status_commands:
-                sender.send_server_deliv_notif(unwrpt_message)
-            self.execute_client_command(unwrpt_message)
         return None
-    
+
     def start_server_thread(self):
         while True:
             conn, addr = self.sock.accept()
             print(addr, "connected")
-            user_thread = threading.Thread(
+            user_thread = Thread(
                 target=self.handle_client, args=(conn, addr))
             user_thread.start()
+
+    def start_command_prompt(self):
+        def cmd_prompt():
+            command = input(">")
+            if command == "r":
+                self.kill_server()
+        prompt_thread = Thread(target=cmd_prompt)
+        prompt_thread.start()
 
     def start(self):  # ? ..<-  -> None
         self.sock.bind(self.ADDR)
         self.sock.listen()
         self.db.setup()
+        self.user_db.setup()
+        self.start_command_prompt()
         self.start_server_thread()
+
+    def kill_server(self):
+        os._exit(0)
 
 
 parser = Parser()

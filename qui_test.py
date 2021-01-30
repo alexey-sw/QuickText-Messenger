@@ -1,4 +1,6 @@
-from time import ctime
-
-current_time = ctime()
-print(type(current_time))
+a = {
+    "f": 5
+}
+key_arr = a.keys()
+print("f" in key_arr)
+print("b" in key_arr)
