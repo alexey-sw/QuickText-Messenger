@@ -27,14 +27,10 @@ class Client:
         self.logged_in = False
         self.gui = None
         self.messages_to_display = []  # this will be a database query
-        self.chat_account_status = {
-            "account": None,  # none if account doesn't exist
-            "is_existent": None,
-            "is_online": None,
-            "status_checked": None  # None is used when we are in the process
-            # status_checked is the main flag: None if we are in process, false if values have been obtained but gui hasn't
-            # displayed info yet, true if gui has displayed the value
-        }
+        self.chat_account = None
+        self.chat_account_is_existent = None
+        self.chat_account_is_online = None
+        self.chat_account_status_checked = None
         self.delivered_messages = []  # texts of delivered messages
 
     def start(self):  # ? ()->None
@@ -88,7 +84,7 @@ class Client:
     def display_message(self, decoded_message):  # ?(dict)->None
         param = "sender" if "sender" in decoded_message.keys() else "from"
         val = decoded_message[param]
-        if val == self.chat_account_status["account"] or val==self.account:
+        if val == self.chat_account or val == self.account:
             text = decoded_message["text"]
             status_vals = self.get_status_values(decoded_message)
             self.messages_to_display.append([text, status_vals])
@@ -126,7 +122,7 @@ class Client:
             message_id = msg["id"]
             sender = msg["text"]
             print("delivery response from user: ", sender)
-            if sender == self.chat_account_status["account"]:
+            if sender == self.chat_account:
                 self.gui.highlight_message(message_id)
 
         elif command == "-account_status:":
@@ -140,7 +136,8 @@ class Client:
             return False
 
     def form_deliv_response(self, message):  # ? (obj)->None
-        sender = message["sender"] if "sender" in message.keys() else message["from"]
+        sender = message["sender"] if "sender" in message.keys(
+        ) else message["from"]
         message_id = message["id"]
         response_message = {
             "from": self.account,
@@ -184,7 +181,7 @@ class Client:
         return None
 
     def get_chat_string(self):
-        account_arr = [self.account, self.chat_account_status["account"]]
+        account_arr = [self.account, self.chat_account]
         account_arr.sort()
         account_string = f"[{account_arr[0]}|{account_arr[1]}]"
         return account_string
@@ -212,8 +209,8 @@ class Client:
         return None
 
     def get_account_status(self, account):
-        self.chat_account_status["account"] = account
-        self.chat_account_status["status_checked"] = None
+        self.chat_account = account
+        self.chat_account_status_checked = None
         message_obj = {
             "text": account,  # ! if account_name is disconnect -> disconnect
             "from": self.account,
@@ -244,11 +241,11 @@ class Client:
         return None
 
     def update_chat_account_status(self, message):
-        self.chat_account_status["is_existent"] = message["is_existent"]
-        self.chat_account_status["is_online"] = message["is_online"]
+        self.chat_account_is_existent = message["is_existent"]
+        self.chat_account_is_online = message["is_online"]
         if not message["is_existent"]:
-            self.chat_account_status["is_existent"] = None
-        self.chat_account_status["status_checked"] = False
+            self.chat_account_is_existent = None
+        self.chat_account_status_checked = False
         return None
 
 
