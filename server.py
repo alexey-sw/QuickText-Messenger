@@ -1,6 +1,6 @@
 import socket
 from sqlite3.dbapi2 import Date
-from threading import Timer,Thread
+from threading import Timer, Thread
 import time
 import os
 from server_sender import Sender
@@ -8,7 +8,8 @@ from server_parser import Parser
 from server_db import DB_Manager
 from user_db import *
 
-#Todo: rework status alternation
+# Todo: rework status alternation
+
 
 class Executor:
     def __init__(self, server):
@@ -54,7 +55,8 @@ class Server:
         self.db.disconnect_user(user_account)
         return None
 
-    def login_client(self, conn):  # ? arr<-  ->array: [string,bool,string ]
+    # ? arr<-  ->array: [string,bool,string ]
+    def get_login_status(self, conn):
         login_message_length = conn.recv(self.HEADERSIZE)
 
         login_message = conn.recv(parser.format_message_length(
@@ -63,6 +65,21 @@ class Server:
         account_name = formatted_login_message["text"]
         is_valid, error = self.account_validity_check(account_name)
         return [account_name, is_valid, error]
+
+    def get_signup_status(self, conn):
+        signup_message_length = conn.recv(self.HEADERSIZE)
+        signup_message = conn.recv(parser.format_message_length(
+            signup_message_length, to_client=False))
+        formatted_signup_message = parser.format_message(signup_message, False)
+        account_name = formatted_signup_message["text"]
+        if self.is_existent(account_name):
+            is_valid = False
+            error = "Such account already exists"
+            return [account_name, is_valid, error]
+        else:
+            error = ""
+            is_valid = True
+            return [account_name, is_valid, error]
 
     def process_message(self, message):
         delay = float(message["delay"])
@@ -76,7 +93,7 @@ class Server:
         account_to = message["from"]
         table_name = message["text"]
         message_array = self.user_db.retrive_messages(table_name)
-        
+
         if message_array:
             for logged_message in message_array:
                 print(logged_message)
@@ -123,21 +140,58 @@ class Server:
         ans = self.db.is_existent(account_name)
         return ans
 
-    def handle_client(self, conn, addr):  # ? arr,string<-  -> None
-        self.online_count += 1
-        print(f"[New connection] {addr} connected")
+    def start_login_loop(self, conn, addr):
         while True:
-            account_name, is_valid, error = self.login_client(
+            account_name, is_valid, error = self.get_login_status(
                 conn)  # error is "" if login was successful
             if is_valid:
                 print(f"{addr} has been connected as {account_name}")
                 self.add_to_connections(conn, account_name)
                 sender.send_login_affirmation(account_name)
-                break
+                return account_name
             else:
                 print(f"LoginProcessError: {error}")
                 sender.send_login_rejection(conn, error)
                 continue
+
+    def start_signup_loop(self, conn, addr):  # ? (conn,addr)->string
+        #! in this loop all we need to do is to check that account doesn't exist
+        # * if account exists when signup was successful
+        while True:
+            account_name, is_valid, error = self.get_signup_status(conn)
+            if is_valid == False:
+                print("Singup failed for ", account_name)
+                sender.send_signup_rejection(conn, error)
+                continue
+            else:
+                print("Signup successful for ", account_name)
+                self.add_to_connections(conn,account_name)
+                self.db.append_client(account_name)
+                sender.send_signup_affirmation(account_name)
+                return account_name
+
+    def get_authorisation_message(self, conn, addr):
+        try:
+            msg_length = conn.recv(self.HEADERSIZE)
+        except:
+            print("authorisation failed for addr :", addr)
+            return None
+        msg_length = parser.format_message_length(msg_length, False)
+        message = conn.recv(msg_length)
+        unwrpt_message = parser.format_message(message, False)
+        print(unwrpt_message)
+        return unwrpt_message
+
+    def handle_client(self, conn, addr):  # ? arr,string<-  -> None
+        self.online_count += 1
+        print(f"[New connection] {addr} connected")
+        message = self.get_authorisation_message(conn, addr)
+        if message == None:  # * authorisation failed
+            return None
+        if message["command"] == "-sign_in:":
+            account_name = self.start_login_loop(conn, addr)
+        else:
+            account_name = self.start_signup_loop(conn, addr)
         self.db.get_tbl("MAIN_TABLE")
         while True:
             try:

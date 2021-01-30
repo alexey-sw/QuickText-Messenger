@@ -30,7 +30,8 @@ class DB_Manager:
         self.connection.commit()
         self.test_fill()
         self.get_tbl("MAIN_TABLE")
-        return
+        del cursor 
+        return None 
 
     def test_fill(self):  # ? None <-- -->None
         cursor = self.connection.cursor()
@@ -38,20 +39,23 @@ class DB_Manager:
             cursor.execute(
                 '''INSERT INTO {}(account_name,is_online) VALUES (?,?)'''.format("MAIN_TABLE"), (letter, 0))
         self.connection.commit()
-        return
+        del cursor 
+        return None 
 
     def get_tbl(self, table):  # ? None<-- --> None
         cursor = self.connection.cursor()
         for row in cursor.execute('''SELECT * FROM {}'''.format(table)):
             print(row)
-        return
+        del cursor 
+        return None 
 
     def update_value(self, table, account_name, column, value):  # ? None<-- -->None
         cursor = self.connection.cursor()
         cursor.execute(
             'UPDATE {} SET {}={} WHERE account_name==?'.format(table, column, value), account_name)
         self.connection.commit()
-        return
+        del cursor 
+        return None 
     
 
     def is_existent(self, account_name):  # ? string<-- --> bool
@@ -59,6 +63,7 @@ class DB_Manager:
         value = cursor.execute(
             'SELECT is_online from MAIN_TABLE WHERE account_name==?', (account_name,))
         self.connection.commit()
+        del cursor 
         if value.fetchall() == []:
             return False
         else:
@@ -72,6 +77,13 @@ class DB_Manager:
         self.update_value(MAIN_TB, account_name, "is_online", 1)
         return None
 
+    def append_client(self,account_name):
+        cursor = self.connection.cursor()
+        is_online = 1 #* if user has signed up, then he is online 
+        cursor.execute('''INSERT INTO {}(account_name,is_online) VALUES (?,?)'''.format("MAIN_TABLE"), (account_name, 1))
+        print("appending client: ",account_name)
+        return None 
+    
     def is_online(self, account_name):  # ? string<--  -->bool
         cursor = self.connection.cursor()
         for row in cursor.execute('SELECT is_online from MAIN_TABLE WHERE account_name==?', account_name):
@@ -82,3 +94,4 @@ class DB_Manager:
                 return False
         self.connection.commit()
         del cursor
+        return None 

@@ -51,12 +51,10 @@ class Sender:  # class is responsible for sending messages to other users
     # ? bytes, bytes, [string or arr], bool<- -> None
     def send(self, msg_len_formatted, msg_formatted, addr, is_account):
         if is_account == True:  # if parameter specified is account
-            
             if self.server.is_online(addr):
-                # if account is passed as a param
                 connection = self.server.get_conn(addr)
             else:
-                # self.server.update_deliv_queue(msg_formatted)#! remove
+                print("Client offline")
                 return None
         else:  # for beginning we will just ignore that message hasn't been sent to user if its
             # if connection is already in params
@@ -79,7 +77,7 @@ class Sender:  # class is responsible for sending messages to other users
         self.send_server_msg(message)
         return None
 
-    # doesn't work because we don't have account value, if login is unsuccessfult
+    # doesn't work because we don't have account value, if login is unsuccessful
     def send_login_rejection(self, connection, error):  # ? arr, string <- -> None
         message = {
             "command": "-login_reject:",
@@ -97,6 +95,35 @@ class Sender:  # class is responsible for sending messages to other users
                   connection, is_account=False)
         return None
 
+    def send_signup_affirmation(self,account_name):
+        message = {
+            "command": "-signup_accept:",
+            "time": self.server.get_time(),
+            "from": "SERVER",
+            "to": account_name,
+            "error": "",
+            "text": f"Successfully logged in as {account_name}"
+        }
+        print("Sending signup affirmation ")
+        self.send_server_msg(message)
+        
+        return None
+    
+    def send_signup_rejection(self,connection,error):#?(conn,string)->None 
+        message = {
+            "command": "-signup_reject:",
+            "time": self.server.get_time(),
+            "from": "SERVER",
+            "to": "unknown",
+            "error": error,
+            "delay": 0
+        }
+        message_formatted = self.parser.format_message(message, to_client=True)
+        message_len = len(message_formatted)
+        message_len_formatted = self.parser.format_message_length(message_len, to_client=True)
+        self.send(message_len_formatted, message_formatted , connection, is_account=False)
+        return None 
+    
     def convert_num(self, val):  # ?(int)->bool
         if val == 1:
             return True

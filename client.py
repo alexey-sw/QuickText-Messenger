@@ -16,8 +16,6 @@ class Client:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # flag that indicates whether we have to send message with current state
         self.to_send = False
-        # self.user_commands = ["-s:", "-delay:", "-swtch:",
-        #                       "-d:", "-delayall:"]  # for server from user , forgot about -info
         self.test_mode = False   # doesn't permit access to the Internet
         self.reset_delay = True
         self.account = "unknown"
@@ -25,6 +23,7 @@ class Client:
         # self.setup_commands = ["-delay:", "-swtch:", "-delayall:"]
         self.help_string = "This is help string "  # * needs change
         self.logged_in = False
+        self.signed_up = False
         self.gui = None
         self.messages_to_display = []  # this will be a database query
         self.chat_account = None
@@ -32,6 +31,8 @@ class Client:
         self.chat_account_is_online = None
         self.chat_account_status_checked = None
         self.delivered_messages = []  # texts of delivered messages
+        self.auto_signup = True
+        self.prohibited_symbols = [":","$","!"," ","(",")","~"]
 
     def start(self):  # ? ()->None
         if not self.test_mode:
@@ -41,13 +42,84 @@ class Client:
                 print("ServerError: try again later")
                 self.exit_client()
             else:
-                self.login_process(self.sock)
+                if self.auto_signup==True:#* remove this line later 
+                    self.send_authorisation_message(sign_up=True)
+                    self.sign_up(self.sock)
+                else:
+                    while True:
+                        to_sign_up = self.to_sign_up()
+                        if to_sign_up != None:
+                            break
+                    if to_sign_up == True:
+                        print("signing up")
+                        self.send_authorisation_message(sign_up=True)
+                        self.sign_up(self.sock)
+                    else:
+                        self.send_authorisation_message(sign_up = False)
+                        self.sign_in(self.sock)
+                        
                 data_thread = Thread(
                     target=self.receive_data, args=(self.sock,))
                 data_thread.start()
                 # need to launch gui code in the same thread
                 self.gui = Gui(Main_Window, self, self.messages_to_display)
                 self.gui.start()
+                
+    def send_authorisation_message(self,sign_up=False): 
+        command = "-sign_up:" if sign_up else "-sign_in:"
+        message_dict = {
+            "command":command   
+        }
+        self.send_message_obj(message_dict)
+        return None
+    
+    def sign_in(self, socket):  # ?(obj) -> None
+        while not self.logged_in:
+            account_name = input("Type name of your account: ")
+            login_message_obj = {"text": account_name,  # ! if account_name is disconnect -> disconnect
+                                 "from": "unknown",
+                                 "delay": 0,
+                                 "time": parser.get_time(),
+                                 "to": "SERVER"
+                                 }  # we create new message object not to change our global message state!
+            login_message_formatted = parser.format_message(
+                login_message_obj, to_server=True)
+            message_len_formatted = parser.format_message_length(
+                len(login_message_formatted), to_server=True)
+            socket.send(message_len_formatted)
+            socket.send(login_message_formatted)
+            self.receive_authorisation_response(socket)
+        return None
+        # add field for password
+
+    def spelling_correct(self,account_name):
+        for symbol in self.prohibited_symbols:
+            if symbol in account_name:
+                return False
+        return True
+        
+    
+    def sign_up(self, socket):
+        while not self.signed_up:
+            account_name = input("Type name of your account: ").strip()
+            if self.spelling_correct(account_name):
+                pass
+            else:
+                print("account spelling incorrect")
+                continue
+            signup_message_object = {"text": account_name,  # ! if account_name is disconnect -> disconnect
+                                     "from": "unknown",
+                                     "delay": 0,
+                                     "time": parser.get_time(),
+                                     "to": "SERVER"
+                                     }  # we create new message object not to change our global message state!
+            signup_message_formatted = parser.format_message(
+                signup_message_object, to_server=True)
+            message_len_formatted = parser.format_message_length(
+                len(signup_message_formatted), to_server=True)
+            socket.send(message_len_formatted)
+            socket.send(signup_message_formatted)
+            self.receive_authorisation_response(socket)
 
     def get_time(self):  # ? ()->string
         return time.ctime()
@@ -59,6 +131,20 @@ class Client:
         if msg["from"] == "SERVER":
             return True
         return False
+
+    def to_sign_up(self):  # ? ()->bool
+        positive_response = ["y", "yes"]
+        negative_response = ["n", "no"]
+
+        val = input("Sign up?(Y/N)")
+        val = val.lower()
+        if val in positive_response:
+            return True
+        elif val in negative_response:
+            return False
+        else:
+            print("Invalid input, try again!")
+            return None
 
     def receive_data(self, socket):  # ? (obj)->None
         while True:
@@ -114,6 +200,11 @@ class Client:
             self.logged_in = True
             obtained_account_val = msg["to"]
             self.account = obtained_account_val
+        elif command =="-signup_accept:":
+            print("signup accepted")
+            self.signed_up  = True
+            obtained_account_val = msg["to"]
+            self.account = obtained_account_val
         elif command == "-display_chat:":
             print("to display message")
             self.display_message(msg)
@@ -152,31 +243,13 @@ class Client:
         self.send_form_deliv_response(response_message)
         return None
 
-    def login_process(self, socket):  # ?(obj) -> None
-        while not self.logged_in:
-            account_name = input("Type name of your account: ")
-            login_message_obj = {"text": account_name,  # ! if account_name is disconnect -> disconnect
-                                 "from": "unknown",
-                                 "delay": 0,
-                                 "time": parser.get_time(),
-                                 "to": "SERVER"
-                                 }  # we create new message object not to change our global message state!
-            login_message_formatted = parser.format_message(
-                login_message_obj, to_server=True)
-            message_len_formatted = parser.format_message_length(
-                len(login_message_formatted), to_server=True)
-            socket.send(message_len_formatted)
-            socket.send(login_message_formatted)
-            self.receive_login_response(socket)
-        return None
-        # add field for password
-
-    def receive_login_response(self, socket):
+    def receive_authorisation_response(self, socket):
         message_len = socket.recv(64)
         formatted_msg_len = parser.format_message_length(
             message_len, False)
         message = socket.recv(formatted_msg_len)
         decoded_message = parser.format_message(message, to_server=False)
+        print(decoded_message)
         self.execute_server_generated_commands(decoded_message)
         return None
 

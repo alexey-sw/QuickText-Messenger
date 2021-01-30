@@ -35,12 +35,13 @@ class Gui():
         elif is_checked == False:
 
             if is_existent == True:
-                self.client.chat_account_status_checked = True
-                self.window.change_button_color(
-                    self.window.select_button, self.window.offline_button_color)
                 if is_online == True:
+                    self.window.change_button_color(self.window.select_button, self.window.online_button_color)
+                else:
+                    self.client.chat_account_status_checked = True
                     self.window.change_button_color(
-                        self.window.select_button, self.window.online_button_color)
+                        self.window.select_button, self.window.offline_button_color)
+                    
             else:
                 self.window.change_button_color(
                     self.window.select_button, self.window.error_button_color)

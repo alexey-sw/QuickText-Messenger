@@ -2,7 +2,8 @@ import sqlite3
 import time
 DEFAULT_TABLE = "sqlite_sequence"
 
-#Todo: change message status when message is read, remove unsent messages 
+#Todo: rename file into chat_db.py
+
 class User_db:
     def __init__(self):#? (string)->None  
         self.db_dir = "user_db.db"
