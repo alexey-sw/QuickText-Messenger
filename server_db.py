@@ -2,7 +2,7 @@ import sqlite3
 from random import randint
 from queue import Queue
 from threading import Event, Thread
-# TODO : Rename unread with unsent
+
 
 alph = "abcdef"
 MAIN_TB = "MAIN_TABLE"

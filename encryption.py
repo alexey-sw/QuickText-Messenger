@@ -1,26 +1,34 @@
 from cryptography.fernet import Fernet
 
-class Key_Message:
-    def __init__(self, key, message):
-        self.key = key
-        self.message = message
+
+def generate_key():
+    key = Fernet.generate_key()
+    key = key.decode()
+    return key 
 
 
-class Encryptor:
-    def encrypt(self, text):#? (string)-> object
-        text = text.encode()
-        cypher_key = Fernet.generate_key()
-        cipher = Fernet(cypher_key)
-        encrypted_text = cipher.encrypt(text)
-        return Key_Message(cypher_key, encrypted_text)
+def encrypt(text, key):  # ? (string)-> object
+    try:
+        
+        key = key.encode()
+    except:
+        print("Key is already encoded")
+        
+    text = text.encode()
+    cypher = Fernet(key)
+    encrypted_text = cypher.encrypt(text)
+    encrypted_text = encrypted_text.decode()
+    return encrypted_text
+
+def decrypt (text,key):  # ?(object)->string
+    try:
+        key = key.encode()
+    except:
+        print("Key is already encoded")
+    text = text.encode()
+    cypher = Fernet(key)
+    decrypted_text = cypher.decrypt(text)
+    decrypted_text = decrypted_text.decode()
+    return decrypted_text
 
 
-class Decryptor:
-    def decrypt(self,key_message): #?(object)->string
-        cypher_key = key_message.key
-        text = key_message.message
-        cypher_obj = Fernet(cypher_key)
-        decrypted_text = cypher_obj.decrypt(text).decode()
-        return decrypted_text
-    
-    

@@ -70,7 +70,7 @@ class Gui():
                 is_read = status_vals[1]
                 self.window.create_message_tab(
                     text, from_this_account=True, is_read=is_read)
-                self.highlight_message(self.window.new_msg_ind-1)
+                self.highlight_message(self.window.last_msg_ind)
 
     def setup_qtimer(self):  # ? None < -- --> None
         self.timer.setInterval(1000)  # check message and status
@@ -124,6 +124,7 @@ class Main_Window(QDialog):
         self.this_account_read_message_color = "#DCFBB7"  # light_green
         self.select_button_value = ""
         self.new_msg_ind = 0
+        self.last_msg_ind = self.new_msg_ind-1
 
     def setup_widgets(self):  # ? ..<- -> None
         self.send_button.clicked.connect(self.send_button_clicked)
@@ -220,6 +221,7 @@ class Main_Window(QDialog):
     def create_message_tab(self, text, from_this_account=False, is_read=False):
         print("created nessage tab with text: ", text)
         self.new_msg_ind += 1
+        self.last_msg_ind+=1
         new_tab = QLabel(self.scrollArea)
         backgnd_color = self.define_background_color(
             from_this_account, is_read)
