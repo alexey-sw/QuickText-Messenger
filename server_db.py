@@ -12,35 +12,34 @@ class DB_Manager:
     def __init__(self):
         self.db_dir = "serv.db"
         self.connection = sqlite3.connect(self.db_dir, check_same_thread=False)
-        self.to_drop = True
+        self.to_drop = False
 
     def setup(self):  # ?None<--  -->None
         cursor = self.connection.cursor()
         try:
             if self.to_drop:
+                print("dropping main table ")
                 cursor.execute('''DROP TABLE MAIN_TABLE''')
-        except:
-            pass
-        cursor.execute('''CREATE TABLE MAIN_TABLE
+                cursor.execute('''CREATE TABLE MAIN_TABLE
                             (
                                 user_id INTEGER PRIMARY KEY AUTOINCREMENT,
                                 account_name TEXT,
                                 is_online INTEGER
                             )''')
+        except:
+            pass
         self.connection.commit()
-        self.test_fill()
+        # self.test_fill()
         self.get_tbl("MAIN_TABLE")
         del cursor 
         return None 
 
-    def test_fill(self):  # ? None <-- -->None
+    def delete_users(self):
         cursor = self.connection.cursor()
-        for letter in alph:
-            cursor.execute(
-                '''INSERT INTO {}(account_name,is_online) VALUES (?,?)'''.format("MAIN_TABLE"), (letter, 0))
+        cursor.execute("DELETE FROM MAIN_TABLE")
         self.connection.commit()
-        del cursor 
-        return None 
+        return None
+        
 
     def get_tbl(self, table):  # ? None<-- --> None
         cursor = self.connection.cursor()

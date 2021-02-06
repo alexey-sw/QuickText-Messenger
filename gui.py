@@ -70,7 +70,7 @@ class Gui():
                 is_read = status_vals[1]
                 self.window.create_message_tab(
                     text, from_this_account=True, is_read=is_read)
-                self.highlight_message(self.window.new_msg_ind)
+                self.highlight_message(self.window.new_msg_ind-1)
 
     def setup_qtimer(self):  # ? None < -- --> None
         self.timer.setInterval(1000)  # check message and status
@@ -254,6 +254,7 @@ class Main_Window(QDialog):
         return None
 
     def highlight_message_tab(self, ind):
+        print(ind)
         message_widget = self.layout.itemAtPosition(ind, 0).widget()
         new_color = self.this_account_read_message_color  # !read_message_color
         message_widget.setStyleSheet(f"background-color:{new_color}")

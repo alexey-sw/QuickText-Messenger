@@ -1,5 +1,7 @@
 import sqlite3
 import time
+from key_db_manager import Key_Manager
+
 DEFAULT_TABLE = "sqlite_sequence"
 
 #Todo: rename file into chat_db.py
@@ -8,7 +10,7 @@ class User_db:
     def __init__(self):#? (string)->None  
         self.db_dir = "user_db.db"
         self.connection = sqlite3.connect(self.db_dir,check_same_thread=False)
-        self.to_drop = True 
+        self.to_drop = False 
     
     def setup(self):#? ()-> None 
         print(self.get_all_tbl())
@@ -65,6 +67,15 @@ class User_db:
             return message_matrix
         else:
             return None 
+    
+    def delete_messages(self):#? ()->None
+        for table in self.get_all_tbl():
+                if table!=DEFAULT_TABLE:
+                    self.drop_tbl(table) 
+                    
+        self.get_all_tbl() 
+        print("here")
+        return None  
     
     def compose_table_name(self,first_account,second_account):#? (string)->string 
         account_array = [first_account,second_account]

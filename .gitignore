@@ -8,3 +8,7 @@ serv.db
 user_db.db
 gui_test.py
 serv.db-journal
+encryption_keys.db
+Readme.txt
+key_db.db
+

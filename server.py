@@ -7,7 +7,6 @@ from server_sender import Sender
 from server_parser import Parser
 from server_db import DB_Manager
 from user_db import *
-
 # Todo: rework status alternation
 
 
@@ -216,11 +215,24 @@ class Server:
                 target=self.handle_client, args=(conn, addr))
             user_thread.start()
 
+    def process_cli_command(self,command):
+        if command == "r":
+            self.kill_server()
+        elif command =="clrmsg":
+            self.user_db.delete_messages()
+        elif command =="clrusr":
+            self.db.delete_users()
+        pass
+    
     def start_command_prompt(self):
+        
         def cmd_prompt():
-            command = input(">")
-            if command == "r":
-                self.kill_server()
+            while True:
+                
+                command = input(">")
+                self.process_cli_command(command)
+                
+        
         prompt_thread = Thread(target=cmd_prompt)
         prompt_thread.start()
 

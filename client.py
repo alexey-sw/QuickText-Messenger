@@ -31,7 +31,7 @@ class Client:
         self.chat_account_is_online = None
         self.chat_account_status_checked = None
         self.delivered_messages = []  # texts of delivered messages
-        self.auto_signup = True
+        self.auto_signup = False
         self.prohibited_symbols = [":","$","!"," ","(",")","~"]
 
     def start(self):  # ? ()->None
