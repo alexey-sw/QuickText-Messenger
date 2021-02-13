@@ -1,30 +1,19 @@
 from cryptography.fernet import Fernet
 
-
-def generate_key():
+def generate_key():#? (None)-> byte 
     key = Fernet.generate_key()
-    key = key.decode()
-    return key 
+    return key
 
 
-def encrypt(text, key):  # ? (string)-> object
-    try:
-        
-        key = key.encode()
-    except:
-        print("Key is already encoded")
-        
+def encrypt(text, key):  # ? (string,byte)-> object
     text = text.encode()
     cypher = Fernet(key)
     encrypted_text = cypher.encrypt(text)
     encrypted_text = encrypted_text.decode()
     return encrypted_text
 
-def decrypt (text,key):  # ?(object)->string
-    try:
-        key = key.encode()
-    except:
-        print("Key is already encoded")
+
+def decrypt(text, key):  # ?(string,byte)->string
     text = text.encode()
     cypher = Fernet(key)
     decrypted_text = cypher.decrypt(text)
@@ -32,3 +21,8 @@ def decrypt (text,key):  # ?(object)->string
     return decrypted_text
 
 
+key = generate_key()
+string = "hello"
+string = encrypt(string, key)
+string = decrypt(string, key)
+print(string)

@@ -56,8 +56,11 @@ class Server:
 
     # ? arr<-  ->array: [string,bool,string ]
     def get_login_status(self, conn):
-        login_message_length = conn.recv(self.HEADERSIZE)
-
+        try:
+            login_message_length = conn.recv(self.HEADERSIZE)
+        except:
+            print("sign-in process has been aborted")
+            return ["",False,"aborted"] 
         login_message = conn.recv(parser.format_message_length(
             login_message_length, to_client=False))
         formatted_login_message = parser.format_message(login_message, False)
@@ -66,7 +69,12 @@ class Server:
         return [account_name, is_valid, error]
 
     def get_signup_status(self, conn):
-        signup_message_length = conn.recv(self.HEADERSIZE)
+        try:
+            signup_message_length = conn.recv(self.HEADERSIZE)
+        except:
+            print("sign-up process has been aborted")
+            return ["",False,"aborted"] 
+        
         signup_message = conn.recv(parser.format_message_length(
             signup_message_length, to_client=False))
         formatted_signup_message = parser.format_message(signup_message, False)
@@ -150,6 +158,8 @@ class Server:
                 return account_name
             else:
                 print(f"LoginProcessError: {error}")
+                if error =="aborted":
+                    return None 
                 sender.send_login_rejection(conn, error)
                 continue
 
@@ -160,11 +170,13 @@ class Server:
             account_name, is_valid, error = self.get_signup_status(conn)
             if is_valid == False:
                 print("Singup failed for ", account_name)
+                if error == "aborted":
+                    return None 
                 sender.send_signup_rejection(conn, error)
                 continue
             else:
                 print("Signup successful for ", account_name)
-                self.add_to_connections(conn,account_name)
+                self.add_to_connections(conn, account_name)
                 self.db.append_client(account_name)
                 sender.send_signup_affirmation(account_name)
                 return account_name
@@ -191,6 +203,10 @@ class Server:
             account_name = self.start_login_loop(conn, addr)
         else:
             account_name = self.start_signup_loop(conn, addr)
+        if account_name == None:
+            print("Session aborted")
+            return None 
+        
         self.db.get_tbl("MAIN_TABLE")
         while True:
             try:
@@ -207,6 +223,10 @@ class Server:
 
         return None
 
+    def get_user_list(self):
+        user_list = list(map(lambda x: x[0], self.connections))
+        return user_list
+
     def start_server_thread(self):
         while True:
             conn, addr = self.sock.accept()
@@ -215,24 +235,35 @@ class Server:
                 target=self.handle_client, args=(conn, addr))
             user_thread.start()
 
-    def process_cli_command(self,command):
+    def process_cli_command(self, command):
+
+        # Todo : drop and recreate table instead of deleting all the contents
         if command == "r":
+            self.db.disconnect_all()
             self.kill_server()
-        elif command =="clrmsg":
+        elif command == "clrmsg":
             self.user_db.delete_messages()
-        elif command =="clrusr":
+        elif command == "clrusr":
             self.db.delete_users()
-        pass
-    
+        elif command == "delkeys":
+            self.user_db.delete_keys()
+        elif command == "resall":
+            self.db.delete_users()
+            self.user_db.delete_keys()
+            self.user_db.delete_messages()
+        else:
+            print(" Undefined command : {}".format(command))
+
+        return None
+
     def start_command_prompt(self):
-        
+
         def cmd_prompt():
             while True:
-                
+
                 command = input(">")
                 self.process_cli_command(command)
-                
-        
+
         prompt_thread = Thread(target=cmd_prompt)
         prompt_thread.start()
 

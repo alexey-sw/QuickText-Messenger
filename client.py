@@ -133,10 +133,10 @@ class Client:
         return False
 
     def to_sign_up(self):  # ? ()->bool
-        positive_response = ["y", "yes"]
+        positive_response = ["y", "yes","yea"]
         negative_response = ["n", "no"]
 
-        val = input("Sign up?(Y/N)")
+        val = input("Sign up?(Y/N)\n")
         val = val.lower()
         if val in positive_response:
             return True

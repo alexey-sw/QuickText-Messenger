@@ -42,18 +42,19 @@ class User_db:
         account_to = message["to"]
         table_name = self.compose_table_name(account_from, account_to)
         print(table_name, "table name")
-        self.ensure_table_exists(self, table_name)
+        self.ensure_table_exists(table_name)
         encryption_key = Key_Manager.retrieve_key(table_name)
         cursor = self.connection.cursor()
         date = message["time"]
         text = message["text"]
-        text = Encryption.encrypt(text)
+        print("Message text: ", text)
+        text = encrypt(text, encryption_key)
+        print("Encrypted text", text)
         message_id = message["id"]
         is_read = 0
         if account_from == account_to:
             is_read = 1
         print("appended message to table: ", table_name)
-        #! unique constraint failed!
         cursor.execute("""INSERT INTO {}
             (
                 MESSAGE_ID,
@@ -66,12 +67,14 @@ class User_db:
         print(self.retrive_messages(table_name), "retrieving messages")
         return None
 
-    # ?(string)->[[id(INT),text(string),date(string),IS_DELIVERED(bool),IS_READ(bool)]]
+    # ?(string)->[[id(INT),text(string),date(string),IS_READ(bool)]]
     def retrive_messages(self, table):
         cursor = self.connection.cursor()
         if self.is_such_table(table):
             message_matrix = cursor.execute(
                 """SELECT * FROM {}""".format(table)).fetchall()
+            message_matrix = Key_Manager.decode_message_matrix(
+                message_matrix, table)
             self.connection.commit()
             self.change_message_arr_status(table)
             return message_matrix
@@ -157,6 +160,10 @@ class User_db:
     def register_user_pair(self, account_1, account_2):
         table_name = self.compose_table_name(account_1, account_2)
         self.create_table(table_name)
+        return None
+
+    def delete_keys(self):
+        Key_Manager.delete_keys()
         return None
 
 
