@@ -1,5 +1,4 @@
 import socket
-from sqlite3.dbapi2 import Date
 from threading import Timer, Thread
 import time
 import os
@@ -53,7 +52,11 @@ class Server:
                 break
         self.db.disconnect_user(user_account)
         return None
-
+    def get_user_name(self,connection):
+        for elem in self.connections:
+            if elem[1] == connection:
+                return elem[0]
+            
     # ? arr<-  ->array: [string,bool,string ]
     def get_login_status(self, conn):
         try:
@@ -245,11 +248,6 @@ class Server:
             self.user_db.delete_messages()
         elif command == "clrusr":
             self.db.delete_users()
-        elif command == "delkeys":
-            self.user_db.delete_keys()
-        elif command == "resall":
-            self.db.delete_users()
-            self.user_db.delete_keys()
             self.user_db.delete_messages()
         else:
             print(" Undefined command : {}".format(command))

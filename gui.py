@@ -33,15 +33,17 @@ class Gui():
         if is_checked == None:
             pass
         elif is_checked == False:
+            print("Status update")
+            print(is_existent,is_online)
 
             if is_existent == True:
                 if is_online == True:
                     self.window.change_button_color(self.window.select_button, self.window.online_button_color)
                 else:
-                    self.client.chat_account_status_checked = True
                     self.window.change_button_color(
                         self.window.select_button, self.window.offline_button_color)
                     
+                self.client.chat_account_status_checked = True    
             else:
                 self.window.change_button_color(
                     self.window.select_button, self.window.error_button_color)
@@ -50,7 +52,7 @@ class Gui():
 
         elif is_checked == True:
             if self.to_check_status:
-                self.client.chat_account_status_checked = False
+                self.client.chat_account_status_checked = None
                 self.client.get_account_status(self.window.select_button_value)
             else:
                 pass
@@ -70,7 +72,8 @@ class Gui():
                 is_read = status_vals[1]
                 self.window.create_message_tab(
                     text, from_this_account=True, is_read=is_read)
-                self.highlight_message(self.window.last_msg_ind)
+                print("highlighting chat message")
+                # self.highlight_message(self.window.last_msg_ind)
 
     def setup_qtimer(self):  # ? None < -- --> None
         self.timer.setInterval(1000)  # check message and status
@@ -197,6 +200,8 @@ class Main_Window(QDialog):
         }
         return msg
 
+    
+    
     def select_button_clicked(self):  # ? ..<- -> None
         #! firstly we need to check in a local database, when in global(server database)
         recipient_account_value = self.account_select.text()
@@ -204,10 +209,15 @@ class Main_Window(QDialog):
         self.remove_message_tabs()
         self.client.get_account_status(recipient_account_value)
         self.change_button_color(self.select_button, "yellow")
+        self.reset_message_index()
         self.client.display_chat()
         print("prompting server for chat history!  line 193 gui.py")
         return None
 
+    def reset_message_index(self):
+        self.new_msg_ind = 0
+        self.last_msg_ind = self.new_msg_ind-1
+    
     def auto_scroll(self):
         scroll_timer = Timer(1.0, self.scroll_to_message)
         scroll_timer.start()
@@ -256,7 +266,10 @@ class Main_Window(QDialog):
         return None
 
     def highlight_message_tab(self, ind):
-        print(ind)
+        print(ind,"message index")
+        print(self.layout.itemAtPosition(ind,0))
+        print(self.layout.itemAtPosition(ind,0))
+        
         message_widget = self.layout.itemAtPosition(ind, 0).widget()
         new_color = self.this_account_read_message_color  # !read_message_color
         message_widget.setStyleSheet(f"background-color:{new_color}")

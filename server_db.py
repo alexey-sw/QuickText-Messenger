@@ -13,7 +13,7 @@ class DB_Manager:
         self.db_dir = "serv.db"
         self.connection = sqlite3.connect(self.db_dir, check_same_thread=False)
         self.to_drop = False
-
+    #! delete /
     def setup(self):  # ?None<--  -->None
         cursor = self.connection.cursor()
         try:
@@ -33,10 +33,24 @@ class DB_Manager:
         self.get_tbl("MAIN_TABLE")
         del cursor
         return None
-
-    def delete_users(self):
+    #! delete /
+    def create_main_table(self):
         cursor = self.connection.cursor()
-        cursor.execute("DELETE FROM MAIN_TABLE")
+        try:
+            cursor.execute('''CREATE TABLE MAIN_TABLE
+                            (
+                                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                account_name TEXT,
+                                is_online INTEGER
+                            )''')
+            self.connection.commit()
+        except:
+            print("Main table already created")
+        
+        return None 
+    def delete_users(self):
+        self.drop_tbl("MAIN_TABLE")
+        self.create_main_table()
         self.connection.commit()
         return None
 
@@ -94,11 +108,19 @@ class DB_Manager:
     def is_online(self, account_name):  # ? string<--  -->bool
         cursor = self.connection.cursor()
         for row in cursor.execute('SELECT is_online from MAIN_TABLE WHERE account_name==?', account_name):
+            
             is_online = row[0]
+            print("in is_online function:", is_online)
             if is_online:
                 return True
             else:
                 return False
         self.connection.commit()
         del cursor
+        return None
+
+    def drop_tbl(self, table):  # ?(string)->None
+        cursor = self.connection.cursor()
+        cursor.execute("DROP TABLE {};".format(table))
+        self.connection.commit()
         return None

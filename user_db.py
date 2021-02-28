@@ -1,10 +1,7 @@
 import sqlite3
 import time
-from key_db_manager import Key_Manager
-from encryption import *
 
 DEFAULT_TABLE = "sqlite_sequence"
-Key_Manager = Key_Manager()
 # Todo: rename file into chat_db.py
 
 
@@ -31,25 +28,25 @@ class User_db:
         table_array = list(map(lambda elem: "["+elem[0]+"]", table_array))
         return table_array
 
-    def ensure_table_exists(self, table_name):
-        if not(self.is_such_table(table_name)):
-            self.create_table(table_name)
-            Key_Manager.set_key(table_name)
-    # * edit operations
+    def ensure_table_existent(self,account1,account2):
+        table_name = self.compose_table_name(account1, account2)
+        if self.is_such_table(table_name):
+            pass
+        else:
+            self.register_user_pair(account1,account2)
+        return None 
+            
+
+
 
     def log_message(self, message):  # ?(string,dict)->None
         account_from = message["from"]
         account_to = message["to"]
-        table_name = self.compose_table_name(account_from, account_to)
-        print(table_name, "table name")
-        self.ensure_table_exists(table_name)
-        encryption_key = Key_Manager.retrieve_key(table_name)
+        self.ensure_table_existent(account_from,account_to)
+        table_name = self.compose_table_name(account_from,account_to)
         cursor = self.connection.cursor()
         date = message["time"]
         text = message["text"]
-        print("Message text: ", text)
-        text = encrypt(text, encryption_key)
-        print("Encrypted text", text)
         message_id = message["id"]
         is_read = 0
         if account_from == account_to:
@@ -64,7 +61,6 @@ class User_db:
                 IS_READ
                 ) VALUES(?,?,?,?,?)""".format(table_name), (message_id, account_from, text, date, is_read))
         self.connection.commit()
-        print(self.retrive_messages(table_name), "retrieving messages")
         return None
 
     # ?(string)->[[id(INT),text(string),date(string),IS_READ(bool)]]
@@ -73,8 +69,6 @@ class User_db:
         if self.is_such_table(table):
             message_matrix = cursor.execute(
                 """SELECT * FROM {}""".format(table)).fetchall()
-            message_matrix = Key_Manager.decode_message_matrix(
-                message_matrix, table)
             self.connection.commit()
             self.change_message_arr_status(table)
             return message_matrix
@@ -149,6 +143,7 @@ class User_db:
         return
 
     def is_such_table(self, table):  # ? (string) -> Bool
+        table = self.correct_table_spelling(table)
         if not "[" or not "]" in table:
             table = f"[{table}]"
         table_array = self.get_all_tbl()
@@ -161,11 +156,6 @@ class User_db:
         table_name = self.compose_table_name(account_1, account_2)
         self.create_table(table_name)
         return None
-
-    def delete_keys(self):
-        Key_Manager.delete_keys()
-        return None
-
 
 def get_time():
     return time.ctime()

@@ -55,12 +55,22 @@ class Sender:  # class is responsible for sending messages to other users
                 connection = self.server.get_conn(addr)
             else:
                 print("Client offline")
+                self.server.disconnect_user(addr)
+
                 return None
         else:  # for beginning we will just ignore that message hasn't been sent to user if its
             # if connection is already in params
             connection = addr
-        connection.send(msg_len_formatted)
-        connection.send(msg_formatted)
+        print(connection)
+        user = self.server.get_user_name(connection)
+        print(user,"user")
+        try:
+            connection.send(msg_len_formatted)
+            connection.send(msg_formatted)
+
+        except:
+            user_name = self.server.get_user_name(connection)
+            self.server.disconnect_user(user_name)
         return None
 
     def send_login_affirmation(self, account_name):  # ? string<- -> None
@@ -153,6 +163,8 @@ class Sender:  # class is responsible for sending messages to other users
         account = message["text"]
         is_existent = self.server.is_existent(account)
         is_online = self.server.is_online(account) if is_existent else False
+        print("Sending_account_status")
+        print(is_online)
         message_obj = {
             "to": message["from"],
             "time": self.server.get_time(),

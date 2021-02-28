@@ -209,7 +209,6 @@ class Client:
             print("to display message")
             self.display_message(msg)
         elif command == "-usr_deliv_success:":
-
             message_id = msg["id"]
             sender = msg["text"]
             print("delivery response from user: ", sender)
@@ -262,7 +261,7 @@ class Client:
     def display_chat(self):
         chat_string = self.get_chat_string()
         message_obj = {
-            "text": chat_string,  # ! if account_name is disconnect -> disconnect
+            "text": chat_string,  
             "from": self.account,
             "delay": 0,
             "time": parser.get_time(),
