@@ -23,10 +23,10 @@ class Incoming_Message:
     def set_status_values(self, dictionary,client_account):
         self.from_this_account = True if client_account==self.sender else False
         
-        if not(self.from_this_account):
+        if self.from_this_account:
             self.is_read = dictionary["is_read"]
         else:
-            self.is_read = True #! if we sent message to ourselves,then we have already read it 
- 
+            pass #! messages from other account aren't highlighted
+        
             
         return None

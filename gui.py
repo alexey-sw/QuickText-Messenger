@@ -1,12 +1,14 @@
 from PyQt5.QtWidgets import QApplication, QFrame
 from PyQt5.QtWidgets import QDialog, QLabel, QGridLayout
 from PyQt5 import uic
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import *
+
 import sys
 from threading import Timer
 # TODO: design decent message styling
 # Todo: display time info for message
 # TODO: send messages with enter button
+Enter_button_code = 16777220
 
 
 class Gui():
@@ -59,22 +61,16 @@ class Gui():
 
     def display_message_arr(self):
         for i in range(len(self.messages_to_display)):
-            new_message_matrix = self.messages_to_display[i]
-            text = new_message_matrix[0]
-            status_vals = new_message_matrix[1]
-            #!rewrite
-            if len(status_vals) == 1:  # ! in case it wasn't message sent from this account
-                self.window.create_message_tab(
-                    text, from_this_account=False)
+            new_message = self.messages_to_display[i]
+            if new_message.from_this_account==False:
+                self.window.create_message_tab(new_message.text,from_this_account =False)
             else:
-                is_read = status_vals[1]
-                self.window.create_message_tab(
-                    text, from_this_account=True, is_read=is_read)
-                
-                if is_read:
-                    highlight_timer = Timer(0.5,self.highlight_message,(self.window.last_msg_ind,))
+                self.window.create_message_tab(new_message.text,from_this_account = True,is_read = new_message.is_read)
+                if new_message.is_read:
+                    message_id = new_message.id
+                    highlight_timer = Timer(0.25,self.window.highlight_message_tab,(message_id,))
                     highlight_timer.start()
-
+            
     def setup_qtimer(self):  # ? None < -- --> None
         self.timer.setInterval(1000)  # check message and status
         self.timer.timeout.connect(self.check_messages)
@@ -143,6 +139,15 @@ class Main_Window(QDialog):
         self.client.exit_client()
         return None
 
+    def keyPressEvent(self, e):
+        print(e)
+        
+        if e.key() ==Enter_button_code:
+            self.send_button_clicked()
+        else:
+            print(e.key())
+            pass
+        return None 
     def get_delay(self):  # ? ...<- -> array of int
         delay_obj = self.timer.dateTime()
         delay_str = delay_obj.toString()
@@ -206,12 +211,15 @@ class Main_Window(QDialog):
         #! firstly we need to check in a local database, when in global(server database)
         recipient_account_value = self.account_select.text()
         self.select_button_value = recipient_account_value
-        self.remove_message_tabs()
-        self.client.get_account_status(recipient_account_value)
-        self.change_button_color(self.select_button, "yellow")
-        self.reset_message_index()
-        self.client.display_chat()
-        print("prompting server for chat history!  line 193 gui.py")
+        if recipient_account_value == self.client.chat_account:
+            pass
+        else:
+            self.remove_message_tabs()
+            self.client.get_account_status(recipient_account_value)
+            self.change_button_color(self.select_button, "yellow")
+            self.reset_message_index()
+            self.client.display_chat()
+            print("prompting server for chat history!  line 193 gui.py")
         return None
 
     def reset_message_index(self):
