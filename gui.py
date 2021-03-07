@@ -33,7 +33,6 @@ class Gui():
         if is_checked == None:
             pass
         elif is_checked == False:
-            print("Status update")
             print(is_existent,is_online)
 
             if is_existent == True:
@@ -64,7 +63,6 @@ class Gui():
             text = new_message_matrix[0]
             status_vals = new_message_matrix[1]
             #!rewrite
-            print(status_vals, "status values")
             if len(status_vals) == 1:  # ! in case it wasn't message sent from this account
                 self.window.create_message_tab(
                     text, from_this_account=False)
@@ -72,8 +70,10 @@ class Gui():
                 is_read = status_vals[1]
                 self.window.create_message_tab(
                     text, from_this_account=True, is_read=is_read)
-                print("highlighting chat message")
-                # self.highlight_message(self.window.last_msg_ind)
+                
+                if is_read:
+                    highlight_timer = Timer(0.5,self.highlight_message,(self.window.last_msg_ind,))
+                    highlight_timer.start()
 
     def setup_qtimer(self):  # ? None < -- --> None
         self.timer.setInterval(1000)  # check message and status
@@ -139,7 +139,7 @@ class Main_Window(QDialog):
         return None
 
     def closeEvent(self, *args, **kwargs):  # ? None <-- --> None
-        print("hello world ")
+        print("Quitting client")
         self.client.exit_client()
         return None
 
@@ -229,7 +229,6 @@ class Main_Window(QDialog):
 
     # ? string ,bool<- -> none
     def create_message_tab(self, text, from_this_account=False, is_read=False):
-        print("created nessage tab with text: ", text)
         self.new_msg_ind += 1
         self.last_msg_ind+=1
         new_tab = QLabel(self.scrollArea)
@@ -246,14 +245,11 @@ class Main_Window(QDialog):
 
     # ?(bool,bool,bool)->string
     def define_background_color(self, from_this_account, is_read):
-        print(is_read)
-
         if from_this_account == False:
 
             backgnd_color = self.another_account_message_color
         else:
             if is_read == True:
-                print("message is read")
                 backgnd_color = self.this_account_read_message_color
             else:
                 backgnd_color = self.this_account_unread_message_color  # light gray
@@ -266,9 +262,6 @@ class Main_Window(QDialog):
         return None
 
     def highlight_message_tab(self, ind):
-        print(ind,"message index")
-        print(self.layout.itemAtPosition(ind,0))
-        print(self.layout.itemAtPosition(ind,0))
         
         message_widget = self.layout.itemAtPosition(ind, 0).widget()
         new_color = self.this_account_read_message_color  # !read_message_color

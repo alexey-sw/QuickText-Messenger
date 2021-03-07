@@ -51,7 +51,6 @@ class User_db:
         is_read = 0
         if account_from == account_to:
             is_read = 1
-        print("appended message to table: ", table_name)
         cursor.execute("""INSERT INTO {}
             (
                 MESSAGE_ID,
@@ -81,7 +80,6 @@ class User_db:
                 self.drop_tbl(table)
 
         self.get_all_tbl()
-        print("here")
         return None
 
     def compose_table_name(self, first_account, second_account):  # ? (string)->string
@@ -102,7 +100,6 @@ class User_db:
         cursor.execute(
             "UPDATE {} SET IS_READ=1 WHERE IS_READ = 0".format(table))
         self.connection.commit()
-        print("Message_arr_status changed: ")
         self.print_tbl(table)
 
         return None

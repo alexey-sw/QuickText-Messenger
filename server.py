@@ -106,7 +106,6 @@ class Server:
 
         if message_array:
             for logged_message in message_array:
-                print(logged_message)
                 sender.send_log_msg(logged_message, account_to)
         else:
             print("No messages for chat: ", table_name)
@@ -140,10 +139,10 @@ class Server:
         return [False, f"Account '{account_name}' doesn't exist"]
 
     def get_conn(self, account_name):  # ? (string) -> object
+        # returns connection for account_name
         for elem in self.connections:  # ! user cannot be offline
             if elem[0] == account_name:
                 return elem[1]
-        print(f"No account named '{account_name}' has been found!")
         return 0
 
     def is_existent(self, account_name):  # ? (string) -> bool
@@ -155,7 +154,6 @@ class Server:
             account_name, is_valid, error = self.get_login_status(
                 conn)  # error is "" if login was successful
             if is_valid:
-                print(f"{addr} has been connected as {account_name}")
                 self.add_to_connections(conn, account_name)
                 sender.send_login_affirmation(account_name)
                 return account_name
@@ -193,7 +191,6 @@ class Server:
         msg_length = parser.format_message_length(msg_length, False)
         message = conn.recv(msg_length)
         unwrpt_message = parser.format_message(message, False)
-        print(unwrpt_message)
         return unwrpt_message
 
     def handle_client(self, conn, addr):  # ? arr,string<-  -> None
@@ -233,7 +230,6 @@ class Server:
     def start_server_thread(self):
         while True:
             conn, addr = self.sock.accept()
-            print(addr, "connected")
             user_thread = Thread(
                 target=self.handle_client, args=(conn, addr))
             user_thread.start()

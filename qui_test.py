@@ -1,6 +1,11 @@
-a = {
-    "f": 5
-}
-key_arr = a.keys()
-print("f" in key_arr)
-print("b" in key_arr)
+
+class a:
+    def __init__(self):
+        self.a = 0
+        self.setup()
+        
+    def setup(self):
+        self.a = 5
+        self.b = 1
+        
+a = a()

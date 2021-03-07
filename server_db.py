@@ -102,7 +102,6 @@ class DB_Manager:
         is_online = 1  # * if user has signed up, then he is online
         cursor.execute('''INSERT INTO {}(account_name,is_online) VALUES (?,?)'''.format(
             "MAIN_TABLE"), (account_name, 1))
-        print("appending client: ", account_name)
         return None
 
     def is_online(self, account_name):  # ? string<--  -->bool
@@ -110,7 +109,6 @@ class DB_Manager:
         for row in cursor.execute('SELECT is_online from MAIN_TABLE WHERE account_name==?', account_name):
             
             is_online = row[0]
-            print("in is_online function:", is_online)
             if is_online:
                 return True
             else:
